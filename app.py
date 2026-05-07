@@ -233,10 +233,10 @@ section[data-testid="stSidebar"] .stButton:first-of-type > button:hover {
 
 /* Conversation history buttons */
 section[data-testid="stSidebar"] .stButton:not(:first-of-type) > button {
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 10px;
-    color: var(--text-secondary);
+    color: #444444;
     font-family: 'Inter', sans-serif;
     font-size: 0.8rem;
     font-weight: 400;
@@ -244,14 +244,15 @@ section[data-testid="stSidebar"] .stButton:not(:first-of-type) > button {
     text-align: left;
     transition: all 0.2s ease;
     width: 100%;
-    box-shadow: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
 }
 
 section[data-testid="stSidebar"] .stButton:not(:first-of-type) > button:hover {
-    background: rgba(255, 255, 255, 0.9);
-    border-color: rgba(0,0,0,0.1);
-    color: var(--text-primary);
+    background: #f8f8f8;
+    border-color: rgba(0,0,0,0.12);
+    color: #1a1a1a;
     transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .sidebar-section-label {
@@ -416,7 +417,7 @@ div[data-testid="stChatInput"] {
 div[data-testid="stChatInput"] > div {
     border-radius: var(--radius-xl) !important;
     border: 1px solid rgba(0, 0, 0, 0.10) !important;
-    background: var(--bg-card) !important;
+    background-color: #ffffff !important; /* Forzado blanco */
     box-shadow: var(--shadow-input) !important;
     padding: 2px 4px !important;
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
@@ -430,11 +431,12 @@ div[data-testid="stChatInput"] > div:focus-within {
 div[data-testid="stChatInput"] textarea {
     font-family: 'Inter', sans-serif !important;
     font-size: 0.93rem !important;
-    color: var(--text-primary) !important;
+    color: #1a1a1a !important; /* Forzado negro/gris oscuro */
+    background-color: transparent !important;
 }
 
 div[data-testid="stChatInput"] textarea::placeholder {
-    color: var(--text-muted) !important;
+    color: #888888 !important;
     font-weight: 400;
 }
 
