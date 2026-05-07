@@ -60,12 +60,6 @@ def _obtener_openrouter_api_key() -> str | None:
 # Configurar API de OpenRouter
 OPENROUTER_API_KEY = _obtener_openrouter_api_key()
 
-if not OPENROUTER_API_KEY:
-    raise ValueError(
-        "Error: No se encontro OPENROUTER_API_KEY. "
-        "Configuralo en Streamlit Secrets como OPENROUTER_API_KEY = \"tu_key\""
-    )
-
 HERRAMIENTAS_DISPONIBLES = """
 Herramientas disponibles:
 1. obtener_tarifario(tipo_seguro: str) - Obtiene tarifarios para auto u hogar
@@ -109,7 +103,7 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
 
         self.api_url = "https://openrouter.ai/api/v1/chat/completions"
         self.headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "Authorization": f"Bearer {OPENROUTER_API_KEY or ''}",
             "Content-Type": "application/json",
             "HTTP-Referer": "https://streamlit.app",
             "X-Title": "Auditor IA - Seguros",
@@ -128,6 +122,13 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
 
     def _consultar_modelo(self, partes_generacion: list) -> str:
         """Llama al modelo de OpenRouter con contenido multimodal."""
+        if not OPENROUTER_API_KEY:
+            return (
+                "Falta configurar la API key de OpenRouter en Streamlit Cloud. "
+                "En Settings -> Secrets agrega: OPENROUTER_API_KEY = \"tu_api_key\" "
+                "y luego haz Reboot."
+            )
+
         contenido_usuario = []
         for parte in partes_generacion:
             if isinstance(parte, str):
