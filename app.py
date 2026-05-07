@@ -20,261 +20,133 @@ st.markdown(
     """
 <style>
 /* ─── Google Fonts ─── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+st.markdown(
+    """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap');
 
-/* ─── Variables globales ─── */
 :root {
-    --bg-main: #f4f1eb;
-    --bg-sidebar: #ffffff;
+    --bg-main: #f6f0e8;
+    --bg-sidebar: #fdfbf8;
     --bg-card: #ffffff;
     --bg-input: #ffffff;
-    --border-light: rgba(148, 163, 184, 0.18);
-    --border-input: #d4cdc4;
-    --text-primary: #1a1a1a;
-    --text-secondary: #64748b;
-    --text-muted: #94a3b8;
-    --accent-orange: #c4704b;
-    --accent-orange-hover: #b35f3a;
-    --accent-warm: #e8ddd3;
+    --border-light: rgba(36, 38, 40, 0.12);
+    --border-input: #d7cdbf;
+    --text-primary: #1f2328;
+    --text-secondary: #5c6570;
+    --text-muted: #8f98a3;
+    --accent-coral: #e46f4a;
+    --accent-coral-hover: #cf5c3a;
+    --accent-ink: #182029;
+    --accent-sand: #efe4d6;
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
-    --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 22px;
-    --radius-xl: 28px;
+    --shadow-md: 0 10px 30px rgba(17, 24, 39, 0.10);
+    --shadow-lg: 0 22px 60px rgba(17, 24, 39, 0.16);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
 }
 
-/* ─── Base ─── */
 html, body, [class*="css"], .stApp {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif !important;
+    color: var(--text-primary);
 }
 
 .stApp {
-    background: var(--bg-main);
+    background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(228, 111, 74, 0.18), transparent 55%),
+        radial-gradient(900px 500px at -10% 10%, rgba(24, 32, 41, 0.12), transparent 55%),
+        linear-gradient(180deg, #f9f3eb 0%, #f4ede3 55%, #f2eadf 100%);
 }
 
-/* ─── Sidebar ─── */
 section[data-testid="stSidebar"] {
     background: var(--bg-sidebar);
     border-right: 1px solid var(--border-light);
-    padding-top: 10px;
+    padding-top: 18px;
 }
 
 section[data-testid="stSidebar"] .stMarkdown h3 {
-    font-size: 1.05rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--accent-ink);
+    letter-spacing: -0.01em;
     margin-bottom: 4px;
 }
 
 section[data-testid="stSidebar"] .stButton > button {
-    background: transparent;
+    background: var(--bg-card);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 500;
-    padding: 8px 14px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 9px 14px;
     text-align: left;
     transition: all 0.2s ease;
     width: 100%;
+    box-shadow: var(--shadow-sm);
 }
 
 section[data-testid="stSidebar"] .stButton > button:hover {
-    background: var(--accent-warm);
+    background: var(--accent-sand);
     border-color: var(--border-input);
-}
-
-/* Nav items en sidebar */
-.sidebar-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-size: 0.92rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s ease;
-    text-decoration: none;
-}
-
-.sidebar-nav-item:hover {
-    background: #f5f3ef;
-}
-
-.sidebar-nav-icon {
-    font-size: 1.1rem;
-    width: 22px;
-    text-align: center;
-    opacity: 0.7;
+    transform: translateY(-1px);
 }
 
 .sidebar-section-label {
-    font-size: 0.72rem;
-    font-weight: 600;
+    font-size: 0.7rem;
+    font-weight: 700;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 18px 12px 6px;
+    letter-spacing: 0.12em;
+    padding: 20px 12px 6px;
 }
 
-.sidebar-history-item {
-    display: block;
-    padding: 7px 12px;
-    border-radius: var(--radius-sm);
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: background 0.15s ease;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    text-decoration: none;
+.sidebar-divider {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 12px 0 8px;
 }
 
-.sidebar-history-item:hover {
-    background: #f5f3ef;
-    color: var(--text-primary);
-}
-
-/* ─── Header / Greeting ─── */
 .claude-greeting {
     text-align: center;
-    padding: 60px 20px 30px;
-}
-
-.claude-greeting-icon {
-    display: inline-block;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 4px;
-    vertical-align: middle;
+    padding: 70px 20px 36px;
 }
 
 .claude-greeting h1 {
-    font-family: 'Inter', sans-serif;
-    font-size: 2.2rem;
-    font-weight: 400;
-    color: var(--text-primary);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 600;
+    color: var(--accent-ink);
     margin: 0;
     letter-spacing: -0.02em;
 }
 
-.claude-greeting h1 span.icon-flower {
-    font-size: 2.2rem;
-    margin-right: 8px;
-    vertical-align: middle;
+.claude-greeting::after {
+    content: "";
+    display: block;
+    margin: 18px auto 0;
+    width: 120px;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, transparent, var(--accent-coral), transparent);
 }
 
-/* ─── Input Container (Chat Box) ─── */
-.chat-input-container {
-    max-width: 680px;
-    margin: 0 auto 18px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-input);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
-}
-
-/* File preview inside the input area */
-.file-preview-area {
-    padding: 16px 18px 0;
-}
-
-.file-preview-card {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    background: #fafaf8;
-    border: 1px solid var(--border-light);
-    border-radius: 12px;
-    padding: 8px 12px;
-    max-width: 200px;
-}
-
-.file-preview-thumb {
-    width: 60px;
-    height: 72px;
-    background: #fff;
-    border: 1px solid #e5e2dc;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    position: relative;
-}
-
-.file-preview-thumb img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: cover;
-}
-
-.file-type-badge {
-    position: absolute;
-    bottom: 2px;
-    left: 4px;
-    background: #fff;
-    border: 1px solid #e0ddd6;
-    border-radius: 3px;
-    font-size: 0.6rem;
-    font-weight: 700;
-    padding: 1px 4px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-}
-
-/* ─── Suggestion Chips ─── */
-.suggestion-chips {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 0 20px 20px;
-    max-width: 680px;
-    margin: 0 auto;
-}
-
-.suggestion-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-input);
-    border-radius: 20px;
-    padding: 8px 18px;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    font-family: 'Inter', sans-serif;
-}
-
-.suggestion-chip:hover {
-    background: var(--accent-warm);
-    border-color: var(--border-input);
-    box-shadow: var(--shadow-sm);
-}
-
-.chip-icon {
-    font-size: 1rem;
-    opacity: 0.75;
-}
-
-/* ─── Chat Messages ─── */
 .stChatMessage {
-    max-width: 680px;
+    max-width: 740px;
     margin-left: auto;
     margin-right: auto;
-    font-family: 'Inter', sans-serif !important;
+}
+
+.stChatMessage [data-testid="stChatMessageContent"] {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-md);
 }
 
 .stChatMessage [data-testid="stMarkdownContainer"] p,
@@ -282,80 +154,54 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .stChatMessage [data-testid="stMarkdownContainer"] strong,
 .stChatMessage [data-testid="stMarkdownContainer"] em,
 .stChatMessage [data-testid="stMarkdownContainer"] code {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Source Sans 3', sans-serif !important;
     line-height: 1.65;
+    font-size: 0.98rem;
 }
 
 .audit-note {
-    color: #334155;
-    font-size: 0.95rem;
-    line-height: 1.65;
-    font-family: 'Inter', sans-serif !important;
+    color: #2d3741;
+    font-size: 0.98rem;
+    line-height: 1.7;
+    font-family: 'Source Sans 3', sans-serif !important;
 }
 
-.audit-note p,
-.audit-note li,
-.audit-note strong,
-.audit-note em,
-.audit-note code,
-.audit-note ol,
-.audit-note ul {
-    font-family: 'Inter', sans-serif !important;
+.audit-note strong {
+    color: var(--accent-ink);
 }
 
-/* ─── Model Selector Badge ─── */
 .model-badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 0.82rem;
-    font-weight: 500;
-    padding: 4px 0;
+    gap: 6px;
+    background: var(--accent-ink);
+    color: #f8f5f0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
 }
 
-/* ─── Send Button ─── */
-.send-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    background: var(--accent-orange);
-    border: none;
-    border-radius: 50%;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    font-size: 1.1rem;
-}
-
-.send-btn:hover {
-    background: var(--accent-orange-hover);
-}
-
-/* ─── Chat input restyle ─── */
 div[data-testid="stChatInput"] {
-    max-width: 680px;
+    max-width: 740px;
     margin: 0 auto;
 }
 
 div[data-testid="stChatInput"] > div {
     border-radius: var(--radius-lg) !important;
     border-color: var(--border-input) !important;
-    box-shadow: var(--shadow-md) !important;
+    box-shadow: var(--shadow-lg) !important;
     background: var(--bg-card) !important;
 }
 
 div[data-testid="stChatInput"] textarea {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.95rem;
+    font-family: 'Source Sans 3', sans-serif !important;
+    font-size: 1rem;
 }
 
-/* ─── File Uploader restyle ─── */
 div[data-testid="stFileUploader"] {
-    max-width: 680px;
+    max-width: 740px;
     margin: 0 auto;
 }
 
@@ -364,92 +210,64 @@ div[data-testid="stFileUploader"] > div {
     border-color: var(--border-input) !important;
 }
 
-/* ─── Streamlit overrides ─── */
 .stMarkdown, .stMarkdown p {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Source Sans 3', sans-serif !important;
 }
 
-/* Hide default Streamlit footer */
+.stAlert {
+    max-width: 740px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: var(--radius-md) !important;
+}
+
+.stSpinner {
+    max-width: 740px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 
-/* Divider */
-.sidebar-divider {
-    border: none;
-    border-top: 1px solid var(--border-light);
-    margin: 12px 0;
-}
-
-/* Empty chat state */
-.empty-chat-notice {
-    text-align: center;
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    padding: 30px 0 0;
-}
-
-/* Animations */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
 .claude-greeting {
-    animation: fadeInUp 0.5s ease-out;
+    animation: fadeInUp 0.55s ease-out;
 }
 
-.suggestion-chips {
-    animation: fadeInUp 0.6s ease-out 0.1s both;
+.stChatMessage {
+    animation: fadeInUp 0.35s ease-out;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-    background: #d4cdc4;
+    background: #c7b9a7;
     border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover { background: #b8b0a5; }
+::-webkit-scrollbar-thumb:hover { background: #b2a291; }
 
-/* ─── Stacked buttons for suggestions ─── */
-.stButton > button[kind="secondary"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border-input) !important;
-    border-radius: 20px !important;
-    padding: 8px 18px !important;
-    font-size: 0.88rem !important;
-    font-weight: 500 !important;
-    color: var(--text-primary) !important;
-    font-family: 'Inter', sans-serif !important;
-    transition: all 0.2s ease !important;
-}
+@media (max-width: 900px) {
+    .claude-greeting h1 {
+        font-size: 2rem;
+    }
 
-.stButton > button[kind="secondary"]:hover {
-    background: var(--accent-warm) !important;
-    border-color: var(--border-input) !important;
-}
-
-/* ─── Info/Warning boxes ─── */
-.stAlert {
-    max-width: 680px;
-    margin-left: auto;
-    margin-right: auto;
-    border-radius: var(--radius-md) !important;
-}
-
-/* ─── Spinner ─── */
-.stSpinner {
-    max-width: 680px;
-    margin-left: auto;
-    margin-right: auto;
+    .stChatMessage,
+    div[data-testid="stChatInput"],
+    div[data-testid="stFileUploader"],
+    .stAlert,
+    .stSpinner {
+        max-width: 92vw;
+    }
 }
 </style>
 """,
     unsafe_allow_html=True,
 )
-
-# ── Session State ───────────────────────────────────────────────────────────
-if "agente" not in st.session_state:
     st.session_state.agente = crear_agente()
 if "historial" not in st.session_state:
     st.session_state.historial = []
