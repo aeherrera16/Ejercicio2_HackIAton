@@ -58,6 +58,8 @@ if "historial" not in st.session_state:
     st.session_state.historial = []
 if "adjuntos" not in st.session_state:
     st.session_state.adjuntos = []
+if "ultimo_input" not in st.session_state:
+    st.session_state.ultimo_input = None
 
 
 def procesar_adjunto(archivo):
@@ -182,7 +184,7 @@ with col1:
     # Input del usuario
     usuario_input = st.chat_input("Escribe tu pregunta aqui...")
 
-    if usuario_input:
+    if usuario_input and usuario_input != st.session_state.ultimo_input:
         # Mostrar pregunta del usuario
         with st.chat_message("user"):
             st.markdown(usuario_input)
@@ -203,6 +205,7 @@ with col1:
 
         # Guardar en historial de sesión
         st.session_state.historial = st.session_state.agente.obtener_historial()
+        st.session_state.ultimo_input = usuario_input
 
 with col2:
     st.subheader("Adjuntos")
