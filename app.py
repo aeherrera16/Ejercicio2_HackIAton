@@ -38,13 +38,6 @@ st.markdown(
         font-family: "Aptos", "Segoe UI", Arial, sans-serif !important;
         line-height: 1.6;
     }
-    .main-title {
-        color: #1f77b4;
-        text-align: center;
-        margin-bottom: 30px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-    }
     .info-box {
         background-color: #e3f2fd;
         padding: 15px;
@@ -77,19 +70,6 @@ st.markdown(
         color: #64748b;
         display: block;
         margin-top: 4px;
-    }
-    .brand-title {
-        font-size: 1.9rem;
-        font-weight: 700;
-        text-align: center;
-        margin: 18px 0 8px;
-        color: #1f2937;
-        letter-spacing: -0.03em;
-    }
-    .brand-subtitle {
-        text-align: center;
-        color: #64748b;
-        margin-bottom: 18px;
     }
     .stChatMessage [data-testid="stMarkdownContainer"] p,
     .stChatMessage [data-testid="stMarkdownContainer"] li,
@@ -160,9 +140,6 @@ def procesar_adjunto(archivo):
     return None
 
 
-st.markdown("<div class='brand-title'>Auditor de Seguros - Agente IA</div>", unsafe_allow_html=True)
-st.markdown("<div class='brand-subtitle'>Auditoría automática de facturas, documentación y siniestralidad reportada</div>", unsafe_allow_html=True)
-
 left_col, main_col = st.columns([0.28, 0.72], gap="large")
 
 with left_col:
@@ -182,16 +159,11 @@ with left_col:
     if consultas_previas:
         for indice, consulta in enumerate(reversed(consultas_previas[-8:]), start=1):
             resumen = consulta if len(consulta) <= 70 else consulta[:67] + "..."
-            if st.button(f"{indice}. {resumen}", key=f"hist_{indice}", use_container_width=True):
+            if st.button(f"{resumen}", key=f"hist_{indice}", use_container_width=True):
                 st.session_state.consulta_seleccionada = consulta
     else:
         st.caption("Aun no tienes consultas guardadas.")
 
-    st.divider()
-    st.markdown("### Guía rápida")
-    st.write("- Sube PDF, JPG o PNG")
-    st.write("- Escribe tu consulta")
-    st.write("- El agente compara contra el tarifario de referencia")
     st.markdown("</div>", unsafe_allow_html=True)
 
 with main_col:
