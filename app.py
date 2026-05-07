@@ -18,6 +18,9 @@ st.set_page_config(
 st.markdown(
     """
 <style>
+    .stApp {
+        background: #f4f1eb;
+    }
     html, body, [class*="css"], .stApp {
         font-family: "Aptos", "Segoe UI", Arial, sans-serif;
     }
@@ -54,6 +57,48 @@ st.markdown(
         font-size: 0.98rem;
         line-height: 1.55;
     }
+    .claude-panel {
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 18px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+        backdrop-filter: blur(10px);
+    }
+    .history-item {
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 14px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        font-size: 0.92rem;
+        color: #334155;
+    }
+    .history-item small {
+        color: #64748b;
+        display: block;
+        margin-top: 4px;
+    }
+    .brand-title {
+        font-size: 1.9rem;
+        font-weight: 700;
+        text-align: center;
+        margin: 18px 0 8px;
+        color: #1f2937;
+        letter-spacing: -0.03em;
+    }
+    .brand-subtitle {
+        text-align: center;
+        color: #64748b;
+        margin-bottom: 18px;
+    }
+    .stChatMessage [data-testid="stMarkdownContainer"] p,
+    .stChatMessage [data-testid="stMarkdownContainer"] li,
+    .stChatMessage [data-testid="stMarkdownContainer"] strong,
+    .stChatMessage [data-testid="stMarkdownContainer"] em,
+    .stChatMessage [data-testid="stMarkdownContainer"] code {
+        font-family: "Aptos", "Segoe UI", Arial, sans-serif !important;
+        line-height: 1.6;
+    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -67,6 +112,8 @@ if "adjuntos" not in st.session_state:
     st.session_state.adjuntos = []
 if "ultimo_input" not in st.session_state:
     st.session_state.ultimo_input = None
+if "consulta_seleccionada" not in st.session_state:
+    st.session_state.consulta_seleccionada = None
 
 
 def procesar_adjunto(archivo):
@@ -113,66 +160,42 @@ def procesar_adjunto(archivo):
     return None
 
 
-st.markdown("<h1 class='main-title'>Auditor de Seguros - Agente IA</h1>", unsafe_allow_html=True)
+st.markdown("<div class='brand-title'>Auditor de Seguros - Agente IA</div>", unsafe_allow_html=True)
+st.markdown("<div class='brand-subtitle'>Auditoría automática de facturas, documentación y siniestralidad reportada</div>", unsafe_allow_html=True)
 
-with st.sidebar:
-    st.header("Configuracion")
-    st.markdown(
-        """
-    ### Funciones disponibles
-    - Analizar reclamos de seguros
-    - Consultar tarifarios
-    - Verificar coberturas
-    - Obtener politicas de auditoria
-    """
-    )
+left_col, main_col = st.columns([0.28, 0.72], gap="large")
+
+with left_col:
+    st.markdown("<div class='claude-panel' style='padding:16px;'>", unsafe_allow_html=True)
+    st.markdown("### Historial")
 
     if st.button("Limpiar historial", use_container_width=True):
         st.session_state.agente.limpiar_historial()
         st.session_state.historial = []
-        st.success("Historial limpiado")
+        st.session_state.adjuntos = []
+        st.session_state.ultimo_input = None
+        st.session_state.consulta_seleccionada = None
+        st.rerun()
+
+    consultas_previas = [m["content"] for m in st.session_state.historial if m["role"] == "user"]
+
+    if consultas_previas:
+        for indice, consulta in enumerate(reversed(consultas_previas[-8:]), start=1):
+            resumen = consulta if len(consulta) <= 70 else consulta[:67] + "..."
+            if st.button(f"{indice}. {resumen}", key=f"hist_{indice}", use_container_width=True):
+                st.session_state.consulta_seleccionada = consulta
+    else:
+        st.caption("Aun no tienes consultas guardadas.")
 
     st.divider()
-    st.markdown(
-        """
-    ### Ejemplos de preguntas
-    - "Cuales son las coberturas disponibles para seguros de auto?"
-    - "Analiza el siniestro SIN001"
-    - "Deberia aprobarse un reclamo de $50,000?"
-    """
-    )
+    st.markdown("### Guía rápida")
+    st.write("- Sube PDF, JPG o PNG")
+    st.write("- Escribe tu consulta")
+    st.write("- El agente compara contra el tarifario de referencia")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-col1, col2 = st.columns([2, 1])
-
-with col1:
-    st.subheader("Chat con el Auditor")
-
-    archivos = st.file_uploader(
-        "Adjuntar archivos",
-        type=["pdf", "jpg", "jpeg", "png"],
-        accept_multiple_files=True,
-        help=(
-            "Adjunta PDFs o imagenes para analizarlos junto con tu consulta. "
-            f"Maximo {MAX_ADJUNTOS} archivos."
-        ),
-    )
-
-    if archivos:
-        adjuntos_procesados = []
-        if len(archivos) > MAX_ADJUNTOS:
-            st.warning(f"Se usaran solo los primeros {MAX_ADJUNTOS} archivos.")
-
-        for archivo in archivos[:MAX_ADJUNTOS]:
-            adjunto = procesar_adjunto(archivo)
-            if adjunto is not None:
-                adjuntos_procesados.append(adjunto)
-
-        st.session_state.adjuntos = adjuntos_procesados
-
-    if st.session_state.adjuntos:
-        st.caption("Archivos cargados:")
-        for adjunto in st.session_state.adjuntos:
-            st.write(f"- {adjunto['nombre']}")
+with main_col:
+    st.markdown("<div class='claude-panel' style='padding:18px 18px 10px;'>", unsafe_allow_html=True)
 
     for mensaje in st.session_state.historial:
         if mensaje["role"] == "user":
@@ -180,11 +203,41 @@ with col1:
                 st.markdown(mensaje["content"])
         else:
             with st.chat_message("assistant"):
-                st.markdown(mensaje["content"])
+                st.markdown(f"<div class='audit-note'>{mensaje['content']}</div>", unsafe_allow_html=True)
 
-    usuario_input = st.chat_input("Escribe tu pregunta aqui...")
+    if st.session_state.consulta_seleccionada:
+        st.info(f"Consulta seleccionada del historial: {st.session_state.consulta_seleccionada}")
 
-    if usuario_input and usuario_input != st.session_state.ultimo_input:
+    entrada = st.chat_input(
+        "Escribe tu pregunta y adjunta archivos...",
+        accept_file="multiple",
+        file_type=["pdf", "jpg", "jpeg", "png"],
+    )
+
+    if entrada:
+        if isinstance(entrada, str):
+            usuario_input = entrada.strip()
+            archivos = []
+        else:
+            usuario_input = (getattr(entrada, "text", None) or entrada.get("text") or "").strip()
+            archivos = list(getattr(entrada, "files", None) or entrada.get("files", []) or [])
+
+        if archivos:
+            adjuntos_procesados = []
+            if len(archivos) > MAX_ADJUNTOS:
+                st.warning(f"Se usarán solo los primeros {MAX_ADJUNTOS} archivos.")
+
+            for archivo in archivos[:MAX_ADJUNTOS]:
+                adjunto = procesar_adjunto(archivo)
+                if adjunto is not None:
+                    adjuntos_procesados.append(adjunto)
+
+            st.session_state.adjuntos = adjuntos_procesados
+
+        if not usuario_input:
+            st.warning("Escribe una pregunta para poder analizar los adjuntos.")
+            st.stop()
+
         with st.chat_message("user"):
             st.markdown(usuario_input)
             if st.session_state.adjuntos:
@@ -198,45 +251,11 @@ with col1:
                     usuario_input,
                     st.session_state.adjuntos,
                 )
-                st.markdown(f"<div class='audit-note'>\n\n{respuesta}\n\n</div>", unsafe_allow_html=True)
+                st.markdown(respuesta)
 
         st.session_state.historial = st.session_state.agente.obtener_historial()
         st.session_state.ultimo_input = usuario_input
+        st.session_state.adjuntos = st.session_state.adjuntos[:MAX_ADJUNTOS]
 
-with col2:
-    st.subheader("Adjuntos")
-    st.markdown('<div class="info-box"><strong>Archivos listos para analisis</strong></div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.session_state.adjuntos:
-        for adjunto in st.session_state.adjuntos:
-            with st.expander(adjunto["nombre"]):
-                st.write(f"Tipo: {adjunto['tipo']}")
-                if adjunto["tipo"] == "pdf":
-                    st.text_area(
-                        "Texto extraido",
-                        adjunto.get("texto", ""),
-                        height=220,
-                        label_visibility="collapsed",
-                        key=f"texto_panel_{adjunto['nombre']}",
-                    )
-                    if adjunto.get("imagenes_pdf"):
-                        st.caption("Imagenes extraidas del PDF:")
-                        for img in adjunto["imagenes_pdf"]:
-                            st.image(img, use_container_width=True)
-                elif adjunto["tipo"] == "imagen":
-                    st.image(adjunto["imagen"], use_container_width=True)
-    else:
-        st.caption("No hay archivos adjuntos cargados todavia.")
-
-    st.divider()
-    st.markdown("### Sugerencias")
-    st.write("- Sube un PDF con el reclamo o poliza")
-    st.write("- Sube una imagen del documento o evidencia")
-    st.write("- Luego escribe tu consulta en el chat")
-
-st.divider()
-c1, c2 = st.columns(2)
-with c1:
-    st.caption("Sistema de Auditoria de Seguros")
-with c2:
-    st.caption("Powered by Llama 4 Scout")
