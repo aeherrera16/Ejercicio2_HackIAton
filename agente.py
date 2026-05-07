@@ -49,8 +49,8 @@ Herramientas disponibles:
 """
 
 MAX_ADJUNTOS = 3
-MAX_PDF_CHARS = 12000
-MAX_IMAGE_SIDE = 1400
+MAX_PDF_CHARS = 6000
+MAX_IMAGE_SIDE = 900
 
 
 
@@ -150,8 +150,8 @@ Siempre sé profesional, imparcial y fundamenta tus análisis con datos.
             respuesta = self.modelo.generate_content(
                 partes_generacion,
                 generation_config=genai.types.GenerationConfig(
-                    temperature=0.4,
-                    max_output_tokens=1200
+                    temperature=0.2,
+                    max_output_tokens=600
                 )
             )
         except ResourceExhausted:
