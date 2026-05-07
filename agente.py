@@ -129,6 +129,14 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
                 "y luego haz Reboot."
             )
 
+        # OpenRouter usa claves tipo sk-or-... ; evita llamadas fallidas con claves de otro proveedor.
+        if not str(OPENROUTER_API_KEY).startswith("sk-or-"):
+            return (
+                "La API key configurada no parece ser de OpenRouter. "
+                "Para este endpoint necesitas una clave que empiece con 'sk-or-'. "
+                "Si pegaste una key de Groq u otro proveedor, cámbiala en Streamlit Secrets."
+            )
+
         contenido_usuario = []
         for parte in partes_generacion:
             if isinstance(parte, str):
@@ -153,11 +161,18 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             texto = data["choices"][0]["message"]["content"]
             return self._limpiar_respuesta(texto)
         except requests.HTTPError:
+            status = getattr(resp, "status_code", None)
             detalle = ""
             try:
                 detalle = resp.text
             except Exception:
                 pass
+            if status == 401 and "Missing Authentication header" in detalle:
+                return (
+                    "OpenRouter respondió 401 por autenticación faltante. "
+                    "Revisa en Streamlit Secrets que exista exactamente OPENROUTER_API_KEY "
+                    "(sin secciones, sin espacios extra) y que la clave sea de OpenRouter (sk-or-...)."
+                )
             return f"No pude completar el analisis con Llama. Error HTTP: {detalle[:400]}"
         except requests.RequestException as exc:
             return f"No pude conectar con el modelo Llama: {exc}"
