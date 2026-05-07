@@ -10,6 +10,7 @@ import json
 import io
 from dotenv import load_dotenv
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 from PIL import Image
 from database import (
     obtener_tarifario,
@@ -46,6 +47,10 @@ Herramientas disponibles:
 3. listar_siniestros() - Lista todos los siniestros disponibles
 4. obtener_politicas() - Obtiene las políticas de auditoría
 """
+
+MAX_ADJUNTOS = 3
+MAX_PDF_CHARS = 12000
+MAX_IMAGE_SIDE = 1400
 
 
 
@@ -140,13 +145,20 @@ Siempre sé profesional, imparcial y fundamenta tus análisis con datos.
         })
         
         # Generar respuesta
-        respuesta = self.modelo.generate_content(
-            partes_generacion,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.7,
-                max_output_tokens=1500
+        try:
+            respuesta = self.modelo.generate_content(
+                partes_generacion,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.4,
+                    max_output_tokens=800
+                )
             )
-        )
+        except ResourceExhausted:
+            return (
+                "No pude completar el análisis porque se alcanzó el límite de cuota de Gemini. "
+                "Intenta nuevamente en 1-2 minutos o reduce el tamaño/cantidad de adjuntos "
+                "(por ejemplo un PDF más corto y una sola imagen)."
+            )
         
         # Obtener texto de respuesta
         respuesta_texto = self._limpiar_respuesta(respuesta.text)
@@ -203,17 +215,36 @@ Siempre sé profesional, imparcial y fundamenta tus análisis con datos.
             "Si detectas duplicados o cobros fuera de tarifario, indícalo."
         )
 
-        for adjunto in adjuntos:
+        for adjunto in adjuntos[:MAX_ADJUNTOS]:
             tipo = adjunto.get("tipo")
             nombre = adjunto.get("nombre", "archivo")
 
             if tipo == "pdf" and adjunto.get("texto"):
-                partes.append(f"\n\nAdjunto PDF: {nombre}\n{adjunto['texto']}")
+                texto_pdf = self._compactar_texto_pdf(adjunto["texto"])
+                partes.append(f"\n\nAdjunto PDF: {nombre}\n{texto_pdf}")
             elif tipo == "imagen" and adjunto.get("imagen") is not None:
                 partes.append(f"\n\nImagen adjunta: {nombre}")
-                partes.append(adjunto["imagen"])
+                partes.append(self._optimizar_imagen(adjunto["imagen"]))
 
         return partes
+
+    def _compactar_texto_pdf(self, texto: str) -> str:
+        """Recorta texto de PDF para controlar consumo de tokens."""
+        texto_limpio = (texto or "").strip()
+        if len(texto_limpio) <= MAX_PDF_CHARS:
+            return texto_limpio
+
+        inicio = texto_limpio[:9000]
+        fin = texto_limpio[-2500:]
+        return (
+            f"{inicio}\n\n[... contenido omitido para reducir tamaño ...]\n\n{fin}"
+        )
+
+    def _optimizar_imagen(self, imagen: Image.Image) -> Image.Image:
+        """Reduce resolución de imagen antes de enviarla al modelo."""
+        imagen_opt = imagen.copy()
+        imagen_opt.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE))
+        return imagen_opt
     
     def _procesar_peticion(self, pregunta_usuario: str) -> str:
         """
