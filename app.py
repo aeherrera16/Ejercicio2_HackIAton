@@ -1,8 +1,5 @@
 """
 app.py - Interfaz de usuario con Streamlit
-
-Este archivo contiene la "cara" del sistema, donde los usuarios
-interactúan con el agente de auditoría de seguros.
 """
 
 import io
@@ -11,16 +8,15 @@ from PIL import Image
 from pypdf import PdfReader
 from agente import crear_agente, MAX_ADJUNTOS
 
-# Configuración de la página
 st.set_page_config(
     page_title="Auditor IA - Seguros",
     page_icon="A",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# Estilos CSS personalizados
-st.markdown("""
+st.markdown(
+    """
 <style>
     .main-title {
         color: #1f77b4;
@@ -34,24 +30,11 @@ st.markdown("""
         border-left: 4px solid #1f77b4;
         margin-bottom: 15px;
     }
-    .success-box {
-        background-color: #e8f5e9;
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 4px solid #4caf50;
-        margin-bottom: 15px;
-    }
-    .warning-box {
-        background-color: #fff3e0;
-        padding: 15px;
-        border-radius: 8px;
-        border-left: 4px solid #ff9800;
-        margin-bottom: 15px;
-    }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# Inicializar sesión
 if "agente" not in st.session_state:
     st.session_state.agente = crear_agente()
 if "historial" not in st.session_state:
@@ -70,16 +53,29 @@ def procesar_adjunto(archivo):
     if extension == "pdf":
         lector = PdfReader(io.BytesIO(archivo.getvalue()))
         texto_paginas = []
+        imagenes_pdf = []
 
         for pagina in lector.pages:
             texto = pagina.extract_text() or ""
             if texto.strip():
                 texto_paginas.append(texto.strip())
 
+            for imagen_pdf in getattr(pagina, "images", []):
+                if len(imagenes_pdf) >= 2:
+                    break
+                try:
+                    imagen = Image.open(io.BytesIO(imagen_pdf.data))
+                    if imagen.mode not in ("RGB", "L"):
+                        imagen = imagen.convert("RGB")
+                    imagenes_pdf.append(imagen)
+                except Exception:
+                    continue
+
         return {
             "nombre": nombre,
             "tipo": "pdf",
-            "texto": "\n\n".join(texto_paginas).strip() or "[El PDF no contiene texto extraíble.]",
+            "texto": "\n\n".join(texto_paginas).strip() or "[El PDF no contiene texto extraible.]",
+            "imagenes_pdf": imagenes_pdf,
         }
 
     if extension in ["jpg", "jpeg", "png"]:
@@ -92,20 +88,20 @@ def procesar_adjunto(archivo):
 
     return None
 
-# Header
+
 st.markdown("<h1 class='main-title'>Auditor de Seguros - Agente IA</h1>", unsafe_allow_html=True)
 
-# Sidebar
 with st.sidebar:
     st.header("Configuracion")
-
-    st.markdown("""
+    st.markdown(
+        """
     ### Funciones disponibles
     - Analizar reclamos de seguros
     - Consultar tarifarios
     - Verificar coberturas
     - Obtener politicas de auditoria
-    """)
+    """
+    )
 
     if st.button("Limpiar historial", use_container_width=True):
         st.session_state.agente.limpiar_historial()
@@ -113,15 +109,15 @@ with st.sidebar:
         st.success("Historial limpiado")
 
     st.divider()
-
-    st.markdown("""
+    st.markdown(
+        """
     ### Ejemplos de preguntas
     - "Cuales son las coberturas disponibles para seguros de auto?"
     - "Analiza el siniestro SIN001"
     - "Deberia aprobarse un reclamo de $50,000?"
-    """)
+    """
+    )
 
-# Contenido principal
 col1, col2 = st.columns([2, 1])
 
 with col1:
@@ -137,8 +133,8 @@ with col1:
         ),
     )
 
-    adjuntos_procesados = []
     if archivos:
+        adjuntos_procesados = []
         if len(archivos) > MAX_ADJUNTOS:
             st.warning(f"Se usaran solo los primeros {MAX_ADJUNTOS} archivos.")
 
@@ -149,31 +145,12 @@ with col1:
 
         st.session_state.adjuntos = adjuntos_procesados
 
+    if st.session_state.adjuntos:
         st.caption("Archivos cargados:")
-        for adjunto in adjuntos_procesados:
-            st.write(f"• {adjunto['nombre']}")
+        for adjunto in st.session_state.adjuntos:
+            st.write(f"- {adjunto['nombre']}")
 
-    with st.expander("Adjuntos para analisis", expanded=False):
-        if st.session_state.adjuntos:
-            for adjunto in st.session_state.adjuntos:
-                st.write(f"Nombre: {adjunto['nombre']}")
-                st.write(f"Tipo: {adjunto['tipo']}")
-                if adjunto["tipo"] == "pdf":
-                    st.text_area(
-                        "Texto extraido",
-                        adjunto.get("texto", ""),
-                        height=220,
-                        label_visibility="collapsed",
-                        key=f"texto_{adjunto['nombre']}"
-                    )
-                elif adjunto["tipo"] == "imagen":
-                    st.image(adjunto["imagen"], use_container_width=True)
-                st.divider()
-        else:
-            st.caption("No hay archivos adjuntos cargados todavia.")
-
-    # Mostrar historial
-    for i, mensaje in enumerate(st.session_state.historial):
+    for mensaje in st.session_state.historial:
         if mensaje["role"] == "user":
             with st.chat_message("user"):
                 st.markdown(mensaje["content"])
@@ -181,20 +158,16 @@ with col1:
             with st.chat_message("assistant"):
                 st.markdown(mensaje["content"])
 
-    # Input del usuario
     usuario_input = st.chat_input("Escribe tu pregunta aqui...")
 
     if usuario_input and usuario_input != st.session_state.ultimo_input:
-        # Mostrar pregunta del usuario
         with st.chat_message("user"):
             st.markdown(usuario_input)
-
             if st.session_state.adjuntos:
                 st.caption("Adjuntos usados en esta consulta:")
                 for adjunto in st.session_state.adjuntos:
-                    st.write(f"• {adjunto['nombre']}")
+                    st.write(f"- {adjunto['nombre']}")
 
-        # Obtener respuesta del agente
         with st.chat_message("assistant"):
             with st.spinner("Analizando..."):
                 respuesta = st.session_state.agente.analizar_reclamo(
@@ -203,16 +176,12 @@ with col1:
                 )
                 st.markdown(respuesta)
 
-        # Guardar en historial de sesión
         st.session_state.historial = st.session_state.agente.obtener_historial()
         st.session_state.ultimo_input = usuario_input
 
 with col2:
     st.subheader("Adjuntos")
-
-    st.markdown('<div class="info-box">', unsafe_allow_html=True)
-    st.markdown("### Archivos listos para analisis")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('<div class="info-box"><strong>Archivos listos para analisis</strong></div>', unsafe_allow_html=True)
 
     if st.session_state.adjuntos:
         for adjunto in st.session_state.adjuntos:
@@ -224,8 +193,12 @@ with col2:
                         adjunto.get("texto", ""),
                         height=220,
                         label_visibility="collapsed",
-                        key=f"texto_panel_{adjunto['nombre']}"
+                        key=f"texto_panel_{adjunto['nombre']}",
                     )
+                    if adjunto.get("imagenes_pdf"):
+                        st.caption("Imagenes extraidas del PDF:")
+                        for img in adjunto["imagenes_pdf"]:
+                            st.image(img, use_container_width=True)
                 elif adjunto["tipo"] == "imagen":
                     st.image(adjunto["imagen"], use_container_width=True)
     else:
@@ -233,15 +206,13 @@ with col2:
 
     st.divider()
     st.markdown("### Sugerencias")
-    st.write("• Sube un PDF con el reclamo o poliza")
-    st.write("• Sube una imagen del documento o evidencia")
-    st.write("• Luego escribe tu consulta en el chat")
+    st.write("- Sube un PDF con el reclamo o poliza")
+    st.write("- Sube una imagen del documento o evidencia")
+    st.write("- Luego escribe tu consulta en el chat")
 
-# Footer
 st.divider()
-col1, col2 = st.columns(2)
-
-with col1:
+c1, c2 = st.columns(2)
+with c1:
     st.caption("Sistema de Auditoria de Seguros")
-with col2:
-    st.caption("v1.0.0")
+with c2:
+    st.caption("Powered by Llama 4 Scout")
