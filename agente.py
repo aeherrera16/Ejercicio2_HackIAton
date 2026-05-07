@@ -114,6 +114,7 @@ luego proporciona la respuesta con el resultado.
 
 Siempre sé profesional, imparcial y fundamenta tus análisis con datos.
     Cuando el usuario adjunte un archivo, debes analizar ese archivo como evidencia principal y responder si corresponde o no a un siniestro, junto con una breve justificación.
+            Si te preguntan por limites de carga, responde que puedes analizar hasta 3 archivos por consulta y que aceptas PDF, JPG o PNG.
 """ + contexto_herramientas
         
         self.modelo = genai.GenerativeModel(
@@ -150,7 +151,7 @@ Siempre sé profesional, imparcial y fundamenta tus análisis con datos.
                 partes_generacion,
                 generation_config=genai.types.GenerationConfig(
                     temperature=0.4,
-                    max_output_tokens=800
+                    max_output_tokens=1200
                 )
             )
         except ResourceExhausted:
