@@ -192,49 +192,9 @@ div[data-testid="stChatInput"] {
     margin: 0 auto;
 }
 
-div[data-testid="stChatInput"] > div {
-    border-radius: var(--radius-lg) !important;
-    border-color: var(--border-input) !important;
-    box-shadow: var(--shadow-lg) !important;
-    background: var(--bg-card) !important;
-}
-
+/* Force light theme styling for the chat input text to be readable */
 div[data-testid="stChatInput"] textarea {
-    font-family: 'Source Sans 3', sans-serif !important;
-    font-size: 1rem;
-    color: var(--text-primary) !important;
-}
-
-div[data-testid="stChatInput"] textarea::placeholder {
-    color: var(--text-muted) !important;
-}
-
-div[data-testid="stChatInput"] button {
-    background: var(--accent-sand) !important;
-    border: 1px solid var(--border-input) !important;
-    color: var(--accent-ink) !important;
-    border-radius: 999px !important;
-    box-shadow: var(--shadow-sm) !important;
-    height: 40px !important;
-    width: 40px !important;
-}
-
-div[data-testid="stChatInput"] button:hover {
-    background: #e6d8c7 !important;
-}
-
-div[data-testid="stChatInput"] button:last-of-type {
-    background: var(--accent-ink) !important;
-    border: none !important;
-    color: #f8f5f0 !important;
-}
-
-div[data-testid="stChatInput"] button:last-of-type:hover {
-    background: var(--accent-coral) !important;
-}
-
-div[data-testid="stChatInput"] button svg {
-    fill: currentColor !important;
+    color: var(--text-primary);
 }
 
 div[data-testid="stFileUploader"] {
@@ -498,5 +458,6 @@ if entrada:
             )
 
     st.session_state.historial = st.session_state.agente.obtener_historial()
+    st.rerun()
     st.session_state.ultimo_input = usuario_input
     st.session_state.adjuntos = st.session_state.adjuntos[:MAX_ADJUNTOS]
