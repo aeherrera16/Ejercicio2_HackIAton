@@ -114,11 +114,12 @@ luego proporciona la respuesta con el resultado.
 
 Siempre sé profesional, imparcial y fundamenta tus análisis con datos.
     Cuando el usuario adjunte un archivo, debes analizar ese archivo como evidencia principal y responder si corresponde o no a un siniestro, junto con una breve justificación.
-    Si te preguntan por limites de carga, responde que puedes analizar hasta 3 archivos por consulta y que aceptas PDF, JPG o PNG.
+PS C:\Users\krist\OneDrive\Escritorio\Ejercicio2Hackiaton\Ejercicio2_HackIAton> git push --force-with-lease origin main
+Si te preguntan por limites de carga, responde que puedes analizar hasta 3 archivos por consulta y que aceptas PDF, JPG o PNG.
 """ + contexto_herramientas
         
         self.modelo = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="Gemini Embedding 1",
             system_instruction=system_instruction
         )
         self.historial = []
