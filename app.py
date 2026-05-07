@@ -18,10 +18,18 @@ st.set_page_config(
 st.markdown(
     """
 <style>
+    html, body, [class*="css"], .stApp {
+        font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+    }
+    .stMarkdown, .stMarkdown p, .stMarkdown li, .stCaption, .stText, .stChatMessage, .stChatMessage p, .stChatMessage li {
+        font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+    }
     .main-title {
         color: #1f77b4;
         text-align: center;
         margin-bottom: 30px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
     }
     .info-box {
         background-color: #e3f2fd;
@@ -29,6 +37,11 @@ st.markdown(
         border-radius: 8px;
         border-left: 4px solid #1f77b4;
         margin-bottom: 15px;
+    }
+    .audit-note {
+        color: #334155;
+        font-size: 0.98rem;
+        line-height: 1.55;
     }
 </style>
 """,
@@ -174,7 +187,7 @@ with col1:
                     usuario_input,
                     st.session_state.adjuntos,
                 )
-                st.markdown(respuesta)
+                st.markdown(f"<div class='audit-note'>{respuesta}</div>", unsafe_allow_html=True)
 
         st.session_state.historial = st.session_state.agente.obtener_historial()
         st.session_state.ultimo_input = usuario_input

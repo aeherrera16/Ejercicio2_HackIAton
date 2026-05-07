@@ -157,14 +157,17 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             "Detecta discrepancias, cobros duplicados, valores fuera de rango y conceptos no respaldados "
             "antes de que un humano revise la cuenta. "
             "Cuando recibas adjuntos, usalos como evidencia principal. "
+            "Responde con tono amable, claro y profesional. Empieza con una frase corta como 'He analizado los archivos' "
+            "o 'Revisé la documentación' y luego explica tus hallazgos sin sonar robotico. "
             "NO muestres la base de datos en bruto, NO pegues JSON, y NO expliques la referencia a menos que sea necesario. "
             "Responde siempre en este formato:\n"
-            "1. Veredicto: Aprobado, Requiere revision o Rechazado\n"
-            "2. Sobreprecio detectado: si/no + detalle\n"
-            "3. Cobros duplicados: si/no + detalle\n"
-            "4. Diferencias contra tarifario: lista breve\n"
-            "5. Coherencia con siniestralidad reportada: si/no + detalle\n"
-            "6. Recomendacion final: una accion concreta\n"
+            "1. Resumen inicial amable de 1 o 2 lineas\n"
+            "2. Veredicto: Aprobado, Requiere revision o Rechazado\n"
+            "3. Sobreprecio detectado: si/no + detalle\n"
+            "4. Cobros duplicados: si/no + detalle\n"
+            "5. Diferencias contra tarifario: lista breve y sencilla\n"
+            "6. Coherencia con siniestralidad reportada: si/no + detalle\n"
+            "7. Recomendacion final: una accion concreta y amable\n"
             "Puedes analizar hasta 3 archivos por consulta (PDF/JPG/PNG).\n\n"
             + contexto_herramientas
             + "\n\n"
@@ -283,7 +286,12 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             lineas_limpias.append(linea)
 
         resultado = "\n".join(lineas_limpias).strip()
-        return resultado or texto.strip()
+        resultado = resultado or texto.strip()
+
+        if resultado and not resultado.lower().startswith(("he analizado", "revisé", "revisé la documentación", "he revisado")):
+            resultado = "He analizado los archivos y encontré lo siguiente:\n\n" + resultado
+
+        return resultado
 
     def _construir_partes_generacion(self, texto_base: str, adjuntos: list | None) -> list:
         """
