@@ -162,12 +162,12 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             "NO muestres la base de datos en bruto, NO pegues JSON, y NO expliques la referencia a menos que sea necesario. "
             "Responde siempre en este formato:\n"
             "1. Resumen inicial amable de 1 o 2 lineas\n"
-            "2. Veredicto: Aprobado, Requiere revision o Rechazado\n"
-            "3. Sobreprecio detectado: si/no + detalle\n"
-            "4. Cobros duplicados: si/no + detalle\n"
-            "5. Diferencias contra tarifario: lista breve y sencilla\n"
-            "6. Coherencia con siniestralidad reportada: si/no + detalle\n"
-            "7. Recomendacion final: una accion concreta y amable\n"
+            "2. Veredicto:\n   - estado: Aprobado, Requiere revision o Rechazado\n"
+            "3. Sobreprecio detectado:\n   - estado: si/no\n   - detalle: una frase clara\n"
+            "4. Cobros duplicados:\n   - estado: si/no\n   - detalle: una frase clara\n"
+            "5. Diferencias contra tarifario:\n   - lista breve con viñetas\n"
+            "6. Coherencia con siniestralidad reportada:\n   - estado: si/no\n   - detalle: una frase clara\n"
+            "7. Recomendacion final:\n   - una accion concreta y amable\n"
             "Puedes analizar hasta 3 archivos por consulta (PDF/JPG/PNG).\n\n"
             + contexto_herramientas
             + "\n\n"
@@ -290,6 +290,8 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
 
         if resultado and not resultado.lower().startswith(("he analizado", "revisé", "revisé la documentación", "he revisado")):
             resultado = "He analizado los archivos y encontré lo siguiente:\n\n" + resultado
+
+        resultado = resultado.replace(")y", ") y").replace(")de", ") de").replace("(250.00)y", "(250.00) y")
 
         return resultado
 

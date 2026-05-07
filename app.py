@@ -24,6 +24,17 @@ st.markdown(
     .stMarkdown, .stMarkdown p, .stMarkdown li, .stCaption, .stText, .stChatMessage, .stChatMessage p, .stChatMessage li {
         font-family: "Aptos", "Segoe UI", Arial, sans-serif;
     }
+    .audit-note,
+    .audit-note p,
+    .audit-note li,
+    .audit-note strong,
+    .audit-note em,
+    .audit-note code,
+    .audit-note ol,
+    .audit-note ul {
+        font-family: "Aptos", "Segoe UI", Arial, sans-serif !important;
+        line-height: 1.6;
+    }
     .main-title {
         color: #1f77b4;
         text-align: center;
@@ -187,7 +198,7 @@ with col1:
                     usuario_input,
                     st.session_state.adjuntos,
                 )
-                st.markdown(f"<div class='audit-note'>{respuesta}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='audit-note'>\n\n{respuesta}\n\n</div>", unsafe_allow_html=True)
 
         st.session_state.historial = st.session_state.agente.obtener_historial()
         st.session_state.ultimo_input = usuario_input
