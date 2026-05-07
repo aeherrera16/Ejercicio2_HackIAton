@@ -192,11 +192,6 @@ div[data-testid="stChatInput"] {
     margin: 0 auto;
 }
 
-/* Force light theme styling for the chat input text to be readable */
-div[data-testid="stChatInput"] textarea {
-    color: var(--text-primary);
-}
-
 div[data-testid="stFileUploader"] {
     max-width: 740px;
     margin: 0 auto;
@@ -348,15 +343,15 @@ with st.sidebar:
         st.session_state.consulta_seleccionada = None
         st.rerun()
 
-    # Recents
+    # Recents (grouped by conversation)
     consultas_previas = [m["content"] for m in st.session_state.historial if m["role"] == "user"]
 
     if consultas_previas:
-        st.markdown("<div class='sidebar-section-label'>Recientes</div>", unsafe_allow_html=True)
-        for indice, consulta in enumerate(reversed(consultas_previas[-8:]), start=1):
-            resumen = consulta if len(consulta) <= 55 else consulta[:52] + "..."
-            if st.button(resumen, key=f"hist_{indice}", use_container_width=True):
-                st.session_state.consulta_seleccionada = consulta
+        st.markdown("<div class='sidebar-section-label'>Conversación Actual</div>", unsafe_allow_html=True)
+        primera_consulta = consultas_previas[0]
+        resumen = primera_consulta if len(primera_consulta) <= 55 else primera_consulta[:52] + "..."
+        if st.button(resumen, key="hist_actual", use_container_width=True):
+            st.session_state.consulta_seleccionada = primera_consulta
     else:
         st.markdown("<div class='sidebar-section-label'>Recientes</div>", unsafe_allow_html=True)
         st.caption("Aún no tienes consultas guardadas.")
