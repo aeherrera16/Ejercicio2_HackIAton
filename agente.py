@@ -86,12 +86,44 @@ MAX_IMAGE_SIDE = 1400
 MODEL_NAME = "meta-llama/llama-4-scout-17b-16e-instruct"
 
 
+def _resumen_referencia_database() -> str:
+    """Construye un resumen compacto de los tarifarios y siniestros de referencia."""
+    tarifario_auto = obtener_tarifario("auto")
+    tarifario_hogar = obtener_tarifario("hogar")
+    siniestros = listar_siniestros()
+    politicas = obtener_politicas()
+
+    return f"""
+BASE DE REFERENCIA (Ecuador, datos de ejemplo de database.py)
+
+Tarifario auto:
+{json.dumps(tarifario_auto, indent=2, ensure_ascii=False)}
+
+Tarifario hogar:
+{json.dumps(tarifario_hogar, indent=2, ensure_ascii=False)}
+
+Siniestros de referencia:
+{json.dumps(siniestros, indent=2, ensure_ascii=False)}
+
+Politicas de auditoria:
+{json.dumps(politicas, indent=2, ensure_ascii=False)}
+""".strip()
+
+
 class AgenteAuditoria:
     """Clase principal del agente de auditoria de seguros."""
 
     def __init__(self):
         contexto_herramientas = f"""
 {HERRAMIENTAS_DISPONIBLES}
+
+REGLAS DE AUDITORIA BASADAS EN DATABASE.PY:
+- Usa los tarifarios y siniestros de ejemplo como referencia principal para comparar facturas del taller.
+- Si el archivo o la consulta menciona un siniestro, valida que los montos reclamados y la cobertura coincidan con la siniestralidad reportada.
+- Si hay facturas, verifica insumos, mano de obra, repuestos, honorarios y conceptos repetidos contra el tarifario de referencia.
+- Detecta cobros duplicados, conceptos duplicados, montos repetidos sospechosos, valores fuera de rango y conceptos no respaldados.
+- Si el documento no coincide con un siniestro o no tiene respaldo suficiente, indica inconsistencia y por qué.
+- No inventes tarifas ni reglas fuera de la base de ejemplo.
 
 INSTRUCCIONES PARA USAR LAS HERRAMIENTAS:
 - Si el usuario pregunta por tarifarios, usa: obtener_tarifario(tipo_seguro)
@@ -106,11 +138,17 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
 """
 
         self.system_instruction = (
-            "Eres un auditor experto en seguros. Analiza reclamos, verifica coberturas, "
-            "consulta politicas/tarifarios y da recomendaciones claras. "
+            "Eres un auditor experto en seguros de Ecuador. Tu tarea es auditar automaticamente "
+            "la documentacion y las facturas enviadas por el taller a la aseguradora. "
+            "Debes verificar que los insumos, repuestos, mano de obra y honorarios cobrados "
+            "correspondan al tarifario acordado y a la siniestralidad reportada. "
+            "Detecta discrepancias, cobros duplicados, valores fuera de rango y conceptos no respaldados "
+            "antes de que un humano revise la cuenta. "
             "Cuando recibas adjuntos, usalos como evidencia principal. "
             "Puedes analizar hasta 3 archivos por consulta (PDF/JPG/PNG).\n\n"
             + contexto_herramientas
+            + "\n\n"
+            + _resumen_referencia_database()
         )
 
         if API_PROVIDER == "groq":
