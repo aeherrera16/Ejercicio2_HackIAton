@@ -1,12 +1,76 @@
 """
-app.py - Interfaz de usuario con Streamlit (estilo Claude)
+app.py - Interfaz de usuario con Streamlit (estilo minimalista centrado)
 """
 
 import io
+import json
+import os
+import uuid
+from datetime import datetime
 import streamlit as st
 from PIL import Image
 from pypdf import PdfReader
 from agente import crear_agente, MAX_ADJUNTOS
+
+# ── Persistencia de conversaciones ──────────────────────────────────────────
+CONVERSATIONS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "conversaciones.json")
+
+
+def _cargar_conversaciones() -> list:
+    """Carga las conversaciones guardadas del archivo JSON."""
+    if not os.path.exists(CONVERSATIONS_FILE):
+        return []
+    try:
+        with open(CONVERSATIONS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return []
+
+
+def _guardar_conversaciones(conversaciones: list):
+    """Guarda las conversaciones en el archivo JSON."""
+    try:
+        with open(CONVERSATIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump(conversaciones, f, ensure_ascii=False, indent=2)
+    except IOError:
+        pass
+
+
+def _guardar_conversacion_actual():
+    """Guarda o actualiza la conversación actual en el archivo."""
+    if not st.session_state.historial:
+        return
+
+    conversaciones = _cargar_conversaciones()
+    conv_id = st.session_state.get("conv_id")
+
+    # Resumen: primera pregunta del usuario
+    primera_pregunta = next(
+        (m["content"] for m in st.session_state.historial if m["role"] == "user"), "Sin título"
+    )
+    resumen = primera_pregunta[:60] + "..." if len(primera_pregunta) > 60 else primera_pregunta
+
+    conv_data = {
+        "id": conv_id,
+        "resumen": resumen,
+        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "historial": st.session_state.historial,
+    }
+
+    # Actualizar si ya existe, o agregar nueva
+    encontrada = False
+    for i, c in enumerate(conversaciones):
+        if c["id"] == conv_id:
+            conversaciones[i] = conv_data
+            encontrada = True
+            break
+
+    if not encontrada:
+        conversaciones.insert(0, conv_data)
+
+    # Mantener máximo 20 conversaciones
+    conversaciones = conversaciones[:20]
+    _guardar_conversaciones(conversaciones)
 
 st.set_page_config(
     page_title="Auditor IA - Seguros",
@@ -15,134 +79,288 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── CSS completo estilo Claude ──────────────────────────────────────────────
+# ── CSS completo estilo minimalista gris ─────────────────────────────────────
 st.markdown(
     """
 <style>
 /* ─── Google Fonts ─── */
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-    --bg-main: #f6f0e8;
-    --bg-sidebar: #f6f0e8;
+    --bg-main: #f0f0f0;
+    --bg-sidebar: #e8e8e8;
     --bg-card: #ffffff;
     --bg-input: #ffffff;
-    --border-light: rgba(36, 38, 40, 0.12);
-    --border-input: #d7cdbf;
-    --text-primary: #1f2328;
-    --text-secondary: #5c6570;
-    --text-muted: #8f98a3;
-    --accent-coral: #e46f4a;
-    --accent-coral-hover: #cf5c3a;
-    --accent-ink: #182029;
-    --accent-sand: #efe4d6;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-    --shadow-md: 0 10px 30px rgba(17, 24, 39, 0.10);
-    --shadow-lg: 0 22px 60px rgba(17, 24, 39, 0.16);
+    --bg-input-area: #f5f5f5;
+    --border-light: rgba(0, 0, 0, 0.08);
+    --border-input: #d0d0d0;
+    --text-primary: #1a1a1a;
+    --text-secondary: #555555;
+    --text-muted: #888888;
+    --accent-primary: #2b2b2b;
+    --accent-hover: #444444;
+    --accent-subtle: #e0e0e0;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.08);
+    --shadow-input: 0 2px 16px rgba(0, 0, 0, 0.08);
     --radius-sm: 10px;
     --radius-md: 16px;
     --radius-lg: 24px;
     --radius-xl: 32px;
+    --radius-full: 999px;
 }
 
 html, body, [class*="css"], .stApp {
-    font-family: 'Source Sans 3', 'Segoe UI', sans-serif !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     color: var(--text-primary);
 }
 
+/* ─── Fondo principal gris elegante ─── */
 .stApp {
     background:
-        radial-gradient(1200px 600px at 80% -10%, rgba(228, 111, 74, 0.18), transparent 55%),
-        radial-gradient(900px 500px at -10% 10%, rgba(24, 32, 41, 0.12), transparent 55%),
-        linear-gradient(180deg, #f9f3eb 0%, #f4ede3 55%, #f2eadf 100%);
+        radial-gradient(ellipse 1400px 700px at 50% 0%, rgba(255, 255, 255, 0.6), transparent 60%),
+        linear-gradient(180deg, #f2f2f2 0%, #ebebeb 40%, #e6e6e6 100%);
 }
 
+/* ─── Bottom container (Streamlit chat input area) ─── */
+.stBottom,
+.stBottom > div,
+[data-testid="stBottom"],
+[data-testid="stBottom"] > div {
+    background: transparent !important;
+    border-top: none !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stBottomBlockContainer"],
+.stBottom [data-testid="stBottomBlockContainer"] {
+    background: transparent !important;
+    padding-top: 0px !important;
+    padding-bottom: 18px !important;
+    border-top: none !important;
+}
+
+/* ─── Sidebar ─── */
 section[data-testid="stSidebar"] {
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(244, 236, 225, 0.65)),
-        var(--bg-sidebar);
-    border-right: none;
-    padding-top: 18px;
-    box-shadow: 18px 0 40px rgba(24, 32, 41, 0.08);
+    background: linear-gradient(180deg, #fafafa 0%, #f3f3f3 100%);
+    border-right: 1px solid rgba(0,0,0,0.06);
+    padding-top: 0;
+    box-shadow: 2px 0 20px rgba(0,0,0,0.03);
 }
 
 section[data-testid="stSidebar"] > div {
     background: transparent !important;
+    padding-top: 20px;
+    padding-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 20px);
+}
+
+/* Sidebar brand */
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 4px 20px;
+}
+
+.sidebar-brand-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #2b2b2b 0%, #4a4a4a 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1.15rem;
+    font-family: 'Inter', sans-serif;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.sidebar-brand-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.sidebar-brand-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    letter-spacing: 0.01em;
+    margin-top: 1px;
 }
 
 section[data-testid="stSidebar"] .stMarkdown h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--accent-ink);
-    letter-spacing: -0.01em;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
     margin-bottom: 4px;
 }
 
-section[data-testid="stSidebar"] .stButton > button {
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-    color: var(--text-primary);
-    font-family: 'Source Sans 3', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 9px 14px;
+/* New conversation button — first button in sidebar */
+section[data-testid="stSidebar"] .stButton:first-of-type > button {
+    background: linear-gradient(135deg, #2b2b2b 0%, #3d3d3d 100%);
+    border: none;
+    border-radius: 12px;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 500;
+    padding: 11px 16px;
+    text-align: center;
+    transition: all 0.25s ease;
+    width: 100%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    letter-spacing: 0.01em;
+}
+
+section[data-testid="stSidebar"] .stButton:first-of-type > button:hover {
+    background: linear-gradient(135deg, #3d3d3d 0%, #555555 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+
+/* Conversation history buttons */
+section[data-testid="stSidebar"] .stButton:not(:first-of-type) > button {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    padding: 8px 12px;
     text-align: left;
     transition: all 0.2s ease;
     width: 100%;
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
 }
 
-section[data-testid="stSidebar"] .stButton > button:hover {
-    background: var(--accent-sand);
-    border-color: var(--border-input);
-    transform: translateY(-1px);
+section[data-testid="stSidebar"] .stButton:not(:first-of-type) > button:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0,0,0,0.1);
+    color: var(--text-primary);
+    transform: translateX(2px);
 }
 
 .sidebar-section-label {
-    font-size: 0.7rem;
-    font-weight: 700;
+    font-size: 0.68rem;
+    font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.12em;
-    padding: 20px 12px 6px;
+    letter-spacing: 0.1em;
+    padding: 18px 4px 8px;
+    margin: 0;
 }
 
 .sidebar-divider {
     border: none;
-    border-top: 1px solid var(--border-light);
-    margin: 12px 0 8px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    margin: 12px 0 6px;
 }
 
-.claude-greeting {
+/* Empty state in sidebar */
+.sidebar-empty {
     text-align: center;
-    padding: 70px 20px 36px;
+    padding: 36px 16px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
 }
 
-.claude-greeting h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 2.6rem;
-    font-weight: 600;
-    color: var(--accent-ink);
-    margin: 0;
-    letter-spacing: -0.02em;
+.sidebar-empty-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    opacity: 0.35;
 }
 
-.claude-greeting::after {
-    content: "";
-    display: block;
-    margin: 18px auto 0;
-    width: 120px;
-    height: 3px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, var(--accent-coral), transparent);
+/* Sidebar footer */
+.sidebar-footer {
+    position: fixed;
+    bottom: 15px;
+    left: 18px;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #a0a0a0;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    z-index: 999;
 }
 
+/* ─── Greeting centrado ─── */
+.greeting-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 160px);
+    padding: 0 20px 60px;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.greeting-container h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+    letter-spacing: -0.03em;
+    text-align: center;
+    line-height: 1.25;
+}
+
+.greeting-container .greeting-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 28px 0;
+    letter-spacing: -0.03em;
+    text-align: center;
+    line-height: 1.25;
+}
+
+/* System description */
+.system-description {
+    max-width: 520px;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    line-height: 1.6;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Chat messages ─── */
+/* Mensajes del asistente: a la izquierda */
 .stChatMessage {
     max-width: 740px;
-    margin-left: auto;
+    margin-left: 0;
     margin-right: auto;
+}
+
+/* Mensajes del usuario: a la derecha */
+.stChatMessage[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+    margin-left: auto;
+    margin-right: 0;
 }
 
 .stChatMessage [data-testid="stChatMessageContent"] {
@@ -158,42 +376,71 @@ section[data-testid="stSidebar"] .stButton > button:hover {
 .stChatMessage [data-testid="stMarkdownContainer"] strong,
 .stChatMessage [data-testid="stMarkdownContainer"] em,
 .stChatMessage [data-testid="stMarkdownContainer"] code {
-    font-family: 'Source Sans 3', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
     line-height: 1.65;
-    font-size: 0.98rem;
+    font-size: 0.95rem;
 }
 
 .audit-note {
-    color: #2d3741;
-    font-size: 0.98rem;
+    color: var(--text-primary);
+    font-size: 0.95rem;
     line-height: 1.7;
-    font-family: 'Source Sans 3', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
 }
 
 .audit-note strong {
-    color: var(--accent-ink);
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
+/* ─── Model badge ─── */
 .model-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: var(--accent-ink);
-    color: #f8f5f0;
-    font-size: 0.8rem;
+    background: var(--accent-primary);
+    color: #ffffff;
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 999px;
-    letter-spacing: 0.02em;
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.01em;
 }
 
+/* ─── Chat input area ─── */
 div[data-testid="stChatInput"] {
-    max-width: 740px;
+    max-width: 620px;
     margin: 0 auto;
 }
 
+div[data-testid="stChatInput"] > div {
+    border-radius: var(--radius-xl) !important;
+    border: 1px solid rgba(0, 0, 0, 0.10) !important;
+    background: var(--bg-card) !important;
+    box-shadow: var(--shadow-input) !important;
+    padding: 2px 4px !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+div[data-testid="stChatInput"] > div:focus-within {
+    border-color: rgba(0, 0, 0, 0.20) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10) !important;
+}
+
+div[data-testid="stChatInput"] textarea {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.93rem !important;
+    color: var(--text-primary) !important;
+}
+
+div[data-testid="stChatInput"] textarea::placeholder {
+    color: var(--text-muted) !important;
+    font-weight: 400;
+}
+
+/* ─── File uploader ─── */
 div[data-testid="stFileUploader"] {
-    max-width: 740px;
+    max-width: 660px;
     margin: 0 auto;
 }
 
@@ -202,8 +449,9 @@ div[data-testid="stFileUploader"] > div {
     border-color: var(--border-input) !important;
 }
 
+/* ─── Misc ─── */
 .stMarkdown, .stMarkdown p {
-    font-family: 'Source Sans 3', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
 }
 
 .stAlert {
@@ -219,33 +467,69 @@ div[data-testid="stFileUploader"] > div {
     margin-right: auto;
 }
 
+/* ─── Terms line ─── */
+.terms-line {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    margin-bottom: 0;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.01em;
+}
+
+.terms-line a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* ─── Hide Streamlit deploy button & header ─── */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+.stDeployButton {
+    display: none !important;
+}
+
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
+/* ─── Reduce top padding of main content ─── */
+.stMainBlockContainer,
+block-container {
+    padding-top: 1rem !important;
 }
 
-.claude-greeting {
-    animation: fadeInUp 0.55s ease-out;
+/* ─── Animations ─── */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .stChatMessage {
     animation: fadeInUp 0.35s ease-out;
 }
 
+/* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-    background: #c7b9a7;
+    background: #c0c0c0;
     border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover { background: #b2a291; }
+::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
 
+/* ─── Responsive ─── */
 @media (max-width: 900px) {
-    .claude-greeting h1 {
-        font-size: 2rem;
+    .greeting-container h1,
+    .greeting-container .greeting-subtitle {
+        font-size: 1.8rem;
     }
 
     .stChatMessage,
@@ -270,6 +554,10 @@ if "ultimo_input" not in st.session_state:
     st.session_state.ultimo_input = None
 if "consulta_seleccionada" not in st.session_state:
     st.session_state.consulta_seleccionada = None
+if "conv_id" not in st.session_state:
+    st.session_state.conv_id = str(uuid.uuid4())
+if "conversaciones_guardadas" not in st.session_state:
+    st.session_state.conversaciones_guardadas = _cargar_conversaciones()
 
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -329,33 +617,91 @@ def procesar_adjunto(archivo):
 
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Brand / Title
-    st.markdown("### Auditor IA")
+    # Brand with icon
+    st.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-icon">A</div>
+            <div>
+                <div class="sidebar-brand-text">Auditor IA</div>
+                <div class="sidebar-brand-sub">Asistente de auditoría</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    st.markdown("<hr class='sidebar-divider'>", unsafe_allow_html=True)
-
-    # Clear history button
-    if st.button("Limpiar historial", use_container_width=True):
+    # New conversation / clear button
+    if st.button("Nueva conversación", use_container_width=True):
+        # Guardar conversación actual antes de limpiar
+        _guardar_conversacion_actual()
         st.session_state.agente.limpiar_historial()
         st.session_state.historial = []
         st.session_state.adjuntos = []
         st.session_state.ultimo_input = None
         st.session_state.consulta_seleccionada = None
+        st.session_state.conv_id = str(uuid.uuid4())
+        st.session_state.conversaciones_guardadas = _cargar_conversaciones()
         st.rerun()
 
-    # Recents (grouped by conversation)
-    consultas_previas = [m["content"] for m in st.session_state.historial if m["role"] == "user"]
+    st.markdown("<hr class='sidebar-divider'>", unsafe_allow_html=True)
 
-    if consultas_previas:
-        st.markdown("<div class='sidebar-section-label'>Conversación Actual</div>", unsafe_allow_html=True)
-        primera_consulta = consultas_previas[0]
-        resumen = primera_consulta if len(primera_consulta) <= 55 else primera_consulta[:52] + "..."
-        if st.button(resumen, key="hist_actual", use_container_width=True):
-            st.session_state.consulta_seleccionada = primera_consulta
-    else:
-        st.markdown("<div class='sidebar-section-label'>Recientes</div>", unsafe_allow_html=True)
-        st.caption("Aún no tienes consultas guardadas.")
+    # Recents - cargar conversaciones guardadas
+    st.markdown("<div class='sidebar-section-label'>Recientes</div>", unsafe_allow_html=True)
 
+    conversaciones = st.session_state.conversaciones_guardadas
+    hay_conversaciones = False
+
+    # Mostrar conversación actual si tiene historial
+    if st.session_state.historial:
+        consultas_previas = [m["content"] for m in st.session_state.historial if m["role"] == "user"]
+        if consultas_previas:
+            primera = consultas_previas[0]
+            resumen = primera if len(primera) <= 50 else primera[:47] + "..."
+            st.markdown(f"<div style='font-size:0.7rem;color:#aaa;padding:2px 4px 0;'>Ahora</div>", unsafe_allow_html=True)
+            if st.button(f"● {resumen}", key="conv_actual", use_container_width=True):
+                pass  # Ya estamos en esta conversación
+            hay_conversaciones = True
+
+    # Mostrar conversaciones guardadas
+    for idx, conv in enumerate(conversaciones):
+        if conv["id"] == st.session_state.conv_id:
+            continue  # No duplicar la actual
+        hay_conversaciones = True
+        fecha = conv.get("fecha", "")
+        resumen = conv.get("resumen", "Sin título")
+        resumen_corto = resumen if len(resumen) <= 50 else resumen[:47] + "..."
+        st.markdown(f"<div style='font-size:0.7rem;color:#aaa;padding:2px 4px 0;'>{fecha}</div>", unsafe_allow_html=True)
+        if st.button(resumen_corto, key=f"conv_{idx}", use_container_width=True):
+            # Cargar esta conversación
+            st.session_state.historial = conv["historial"]
+            st.session_state.conv_id = conv["id"]
+            st.session_state.agente.limpiar_historial()
+            st.session_state.agente.historial = conv["historial"].copy()
+            st.session_state.consulta_seleccionada = None
+            st.rerun()
+
+    if not hay_conversaciones:
+        st.markdown(
+            """
+            <div class="sidebar-empty">
+                <div class="sidebar-empty-icon">💬</div>
+                Tus conversaciones aparecerán aquí
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Footer del sidebar
+    st.markdown(
+        """
+        <div class="sidebar-footer">
+            <div>Equipo Chifle y Medio</div>
+            <div>Kris y Anahy</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 # ── Main Area ───────────────────────────────────────────────────────────────
 hay_historial = len(st.session_state.historial) > 0
@@ -365,8 +711,14 @@ if not hay_historial:
     saludo = _saludo_hora()
     st.markdown(
         f"""
-        <div class="claude-greeting">
-            <h1>{saludo}, Anahy</h1>
+        <div class="greeting-container">
+            <h1>{saludo}</h1>
+            <p class="greeting-subtitle">¿Qué te gustaría preguntar hoy?</p>
+            <div class="system-description">
+                Sistema de auditoría automática de documentación y facturas enviadas por el taller a la Aseguradora.
+                Verifica que los insumos y honorarios cobrados correspondan al tarifario acordado y a la siniestralidad
+                reportada, detectando discrepancias o cobros duplicados antes de que un humano revise la cuenta.
+            </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -391,23 +743,11 @@ if st.session_state.consulta_seleccionada:
 
 # ── Chat Input ──────────────────────────────────────────────────────────────
 entrada = st.chat_input(
-    "¿En qué puedo ayudarte hoy?",
+    "Pregunta lo que quieras",
     accept_file="multiple",
     file_type=["pdf", "jpg", "jpeg", "png"],
 )
 
-
-
-# ── Model badge ─────────────────────────────────────────────────────────────
-if not hay_historial:
-    st.markdown(
-        """
-        <div style="text-align:center; padding: 10px 0 30px;">
-            <span class="model-badge">Llama 4 Scout · OpenRouter</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
 # ── Process input ──────────────────────────────────────────────────────────
 if entrada:
@@ -453,6 +793,8 @@ if entrada:
             )
 
     st.session_state.historial = st.session_state.agente.obtener_historial()
+    _guardar_conversacion_actual()
+    st.session_state.conversaciones_guardadas = _cargar_conversaciones()
     st.rerun()
     st.session_state.ultimo_input = usuario_input
     st.session_state.adjuntos = st.session_state.adjuntos[:MAX_ADJUNTOS]

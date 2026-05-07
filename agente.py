@@ -157,17 +157,22 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             "Detecta discrepancias, cobros duplicados, valores fuera de rango y conceptos no respaldados "
             "antes de que un humano revise la cuenta. "
             "Cuando recibas adjuntos, usalos como evidencia principal. "
-            "Responde con tono amable, claro y profesional. Empieza con una frase corta como 'He analizado los archivos' "
-            "o 'Revisé la documentación' y luego explica tus hallazgos sin sonar robotico. "
+            "Responde con tono amable, claro y profesional. "
             "NO muestres la base de datos en bruto, NO pegues JSON, y NO expliques la referencia a menos que sea necesario. "
-            "Responde siempre en este formato:\n"
-            "1. Resumen inicial amable de 1 o 2 lineas\n"
-            "2. Veredicto:\n   - estado: Aprobado, Requiere revision o Rechazado\n"
-            "3. Sobreprecio detectado:\n   - estado: si/no\n   - detalle: una frase clara\n"
-            "4. Cobros duplicados:\n   - estado: si/no\n   - detalle: una frase clara\n"
-            "5. Diferencias contra tarifario:\n   - lista breve con viñetas\n"
-            "6. Coherencia con siniestralidad reportada:\n   - estado: si/no\n   - detalle: una frase clara\n"
-            "7. Recomendacion final:\n   - una accion concreta y amable\n"
+            "\n\nIMPORTANTE - COMO RESPONDER:\n"
+            "- SOLO cuando el usuario envie documentos o facturas por PRIMERA VEZ, responde con el formato de auditoria completo:\n"
+            "  1. Resumen inicial amable de 1 o 2 lineas\n"
+            "  2. Veredicto: Aprobado, Requiere revision o Rechazado\n"
+            "  3. Sobreprecio detectado: si/no con detalle\n"
+            "  4. Cobros duplicados: si/no con detalle\n"
+            "  5. Diferencias contra tarifario: lista breve\n"
+            "  6. Coherencia con siniestralidad reportada: si/no con detalle\n"
+            "  7. Recomendacion final: una accion concreta\n"
+            "- Para PREGUNTAS DE SEGUIMIENTO (como '¿esta bien el costo?', '¿me estan cobrando de mas?', "
+            "'hola', 'explicame esto', etc.), responde de forma DIRECTA y CONVERSACIONAL. "
+            "NO repitas el formato de auditoria completo. Responde como un experto amable que contesta la pregunta especifica. "
+            "Si el usuario saluda, saluda de vuelta amablemente y pregunta en que puedes ayudar.\n"
+            "- Si el usuario pide aclarar algo del analisis anterior, responde solo sobre eso, sin repetir todo.\n"
             "Puedes analizar hasta 3 archivos por consulta (PDF/JPG/PNG).\n\n"
             + contexto_herramientas
             + "\n\n"
@@ -200,6 +205,19 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
         self.historial.append({"role": "assistant", "content": respuesta_texto})
         return respuesta_texto
 
+    def _construir_mensajes_con_historial(self, contenido_nuevo) -> list:
+        """Construye la lista de mensajes incluyendo el historial previo."""
+        mensajes = [{"role": "system", "content": self.system_instruction}]
+
+        # Agregar historial previo (sin el último user que es el actual)
+        historial_previo = self.historial[:-1] if self.historial else []
+        for msg in historial_previo:
+            mensajes.append({"role": msg["role"], "content": msg["content"]})
+
+        # Agregar el mensaje actual del usuario
+        mensajes.append({"role": "user", "content": contenido_nuevo})
+        return mensajes
+
     def _consultar_modelo(self, partes_generacion: list) -> str:
         """Llama al modelo del proveedor detectado."""
         if not OPENROUTER_API_KEY:
@@ -220,10 +238,7 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             texto_usuario = "\n\n".join([p for p in partes_generacion if isinstance(p, str)])
             payload = {
                 "model": MODEL_NAME,
-                "messages": [
-                    {"role": "system", "content": self.system_instruction},
-                    {"role": "user", "content": texto_usuario},
-                ],
+                "messages": self._construir_mensajes_con_historial(texto_usuario),
                 "temperature": 0.4,
                 "max_tokens": 1200,
             }
@@ -237,10 +252,7 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
 
             payload = {
                 "model": MODEL_NAME,
-                "messages": [
-                    {"role": "system", "content": self.system_instruction},
-                    {"role": "user", "content": contenido_usuario},
-                ],
+                "messages": self._construir_mensajes_con_historial(contenido_usuario),
                 "temperature": 0.4,
                 "max_tokens": 1200,
             }
@@ -287,9 +299,6 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
 
         resultado = "\n".join(lineas_limpias).strip()
         resultado = resultado or texto.strip()
-
-        if resultado and not resultado.lower().startswith(("he analizado", "revisé", "revisé la documentación", "he revisado")):
-            resultado = "He analizado los archivos y encontré lo siguiente:\n\n" + resultado
 
         resultado = resultado.replace(")y", ") y").replace(")de", ") de").replace("(250.00)y", "(250.00) y")
 

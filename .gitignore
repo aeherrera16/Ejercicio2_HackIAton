@@ -54,3 +54,6 @@ logs/
 # Archivos temporales
 *.tmp
 .cache/
+
+# Conversaciones locales
+conversaciones.json
