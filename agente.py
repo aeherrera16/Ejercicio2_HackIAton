@@ -22,9 +22,19 @@ from database import (
 load_dotenv()
 
 # Configurar API de Gemini
+# Leer la API key desde .env o desde Streamlit secrets si estamos en Streamlit Cloud
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+try:
+    # si el módulo streamlit está disponible en runtime, preferir st.secrets
+    import streamlit as _st
+    if not GEMINI_API_KEY and "GEMINI_API_KEY" in _st.secrets:
+        GEMINI_API_KEY = _st.secrets["GEMINI_API_KEY"]
+except Exception:
+    # no estamos en Streamlit o no hay st.secrets disponibles
+    pass
+
 if not GEMINI_API_KEY:
-    raise ValueError("❌ Error: No se encontró GEMINI_API_KEY en el archivo .env")
+    raise ValueError("❌ Error: No se encontró GEMINI_API_KEY en el archivo .env o en Streamlit secrets")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
