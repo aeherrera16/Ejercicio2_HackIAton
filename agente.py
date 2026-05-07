@@ -22,18 +22,49 @@ from database import (
 # Cargar variables de entorno
 load_dotenv()
 
-# Configurar API de OpenRouter
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-try:
-    import streamlit as _st
+def _obtener_openrouter_api_key() -> str | None:
+    """Obtiene API key desde entorno o Streamlit secrets con nombres alternos."""
+    posibles_nombres = [
+        "OPENROUTER_API_KEY",
+        "OPEN_ROUTER_API_KEY",
+        "OPENROUTER_KEY",
+    ]
 
-    if not OPENROUTER_API_KEY and "OPENROUTER_API_KEY" in _st.secrets:
-        OPENROUTER_API_KEY = _st.secrets["OPENROUTER_API_KEY"]
-except Exception:
-    pass
+    for nombre in posibles_nombres:
+        valor = os.getenv(nombre)
+        if valor and str(valor).strip():
+            return str(valor).strip()
+
+    try:
+        import streamlit as _st
+
+        for nombre in posibles_nombres:
+            if nombre in _st.secrets:
+                valor = _st.secrets[nombre]
+                if valor and str(valor).strip():
+                    return str(valor).strip()
+
+        # Compatibilidad extra si el secreto se guardo como minusculas.
+        for nombre in posibles_nombres:
+            nombre_lower = nombre.lower()
+            if nombre_lower in _st.secrets:
+                valor = _st.secrets[nombre_lower]
+                if valor and str(valor).strip():
+                    return str(valor).strip()
+    except Exception:
+        pass
+
+    return None
+
+
+# Configurar API de OpenRouter
+OPENROUTER_API_KEY = _obtener_openrouter_api_key()
 
 if not OPENROUTER_API_KEY:
-    raise ValueError("Error: No se encontro OPENROUTER_API_KEY en .env o Streamlit secrets")
+    raise ValueError(
+        "Error: No se encontro OPENROUTER_API_KEY. "
+        "Configuralo en Streamlit Secrets como OPENROUTER_API_KEY = \"tu_key\""
+    )
 
 HERRAMIENTAS_DISPONIBLES = """
 Herramientas disponibles:
