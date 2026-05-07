@@ -118,7 +118,7 @@ Siempre sé profesional, imparcial y fundamenta tus análisis con datos.
 """ + contexto_herramientas
         
         self.modelo = genai.GenerativeModel(
-            model_name="gemini-1.5-flash-latest",
+            model_name="gemini-2.5-flash",
             system_instruction=system_instruction
         )
         self.historial = []
