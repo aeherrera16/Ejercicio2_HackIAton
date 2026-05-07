@@ -265,6 +265,7 @@ footer { visibility: hidden; }
 """,
     unsafe_allow_html=True,
 )
+if "agente" not in st.session_state:
     st.session_state.agente = crear_agente()
 if "historial" not in st.session_state:
     st.session_state.historial = []
