@@ -10,7 +10,7 @@ from agente import crear_agente, MAX_ADJUNTOS
 
 st.set_page_config(
     page_title="Auditor IA - Seguros",
-    page_icon="🔍",
+    page_icon="A",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -519,19 +519,19 @@ def procesar_adjunto(archivo):
 # ── Sidebar ─────────────────────────────────────────────────────────────────
 with st.sidebar:
     # Brand / Title
-    st.markdown("### 🔍 Auditor IA")
+    st.markdown("### Auditor IA")
 
     st.markdown("<hr class='sidebar-divider'>", unsafe_allow_html=True)
 
     # Nav items
     st.markdown(
         """
-        <div class="sidebar-nav-item"><span class="sidebar-nav-icon">＋</span> Nueva consulta</div>
-        <div class="sidebar-nav-item"><span class="sidebar-nav-icon">🔎</span> Buscar</div>
-        <div class="sidebar-nav-item"><span class="sidebar-nav-icon">📋</span> Historial</div>
-        <div class="sidebar-nav-item"><span class="sidebar-nav-icon">📂</span> Siniestros</div>
-        <div class="sidebar-nav-item"><span class="sidebar-nav-icon">📊</span> Tarifarios</div>
-        <div class="sidebar-nav-item"><span class="sidebar-nav-icon">⚙️</span> Configuración</div>
+        <div class="sidebar-nav-item"><span class="sidebar-nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></span> Nueva consulta</div>
+        <div class="sidebar-nav-item"><span class="sidebar-nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4"/><line x1="10" y1="10" x2="14" y2="14"/></svg></span> Buscar</div>
+        <div class="sidebar-nav-item"><span class="sidebar-nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 2h8v12H4z"/><line x1="6" y1="5" x2="10" y2="5"/><line x1="6" y1="8" x2="10" y2="8"/><line x1="6" y1="11" x2="9" y2="11"/></svg></span> Historial</div>
+        <div class="sidebar-nav-item"><span class="sidebar-nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12v10H2z"/><path d="M2 4l2-2h4l2 2"/></svg></span> Siniestros</div>
+        <div class="sidebar-nav-item"><span class="sidebar-nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="3" height="10"/><rect x="6.5" y="6" width="3" height="7"/><rect x="11" y="1" width="3" height="12"/></svg></span> Tarifarios</div>
+        <div class="sidebar-nav-item"><span class="sidebar-nav-icon"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5"/><circle cx="8" cy="8" r="2"/><line x1="8" y1="1" x2="8" y2="3"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="1" y1="8" x2="3" y2="8"/><line x1="13" y1="8" x2="15" y2="8"/></svg></span> Configuración</div>
         """,
         unsafe_allow_html=True,
     )
@@ -539,7 +539,7 @@ with st.sidebar:
     st.markdown("<hr class='sidebar-divider'>", unsafe_allow_html=True)
 
     # Clear history button
-    if st.button("🗑️  Limpiar historial", use_container_width=True):
+    if st.button("Limpiar historial", use_container_width=True):
         st.session_state.agente.limpiar_historial()
         st.session_state.historial = []
         st.session_state.adjuntos = []
@@ -570,7 +570,7 @@ if not hay_historial:
     st.markdown(
         f"""
         <div class="claude-greeting">
-            <h1><span class="icon-flower">❇️</span> {saludo}, Anahy</h1>
+            <h1><span class="icon-flower" style="color:#c4704b;">*</span> {saludo}, Anahy</h1>
         </div>
         """,
         unsafe_allow_html=True,
@@ -591,7 +591,7 @@ if hay_historial:
 
 # ── Selected query notice ──────────────────────────────────────────────────
 if st.session_state.consulta_seleccionada:
-    st.info(f"📌 Consulta seleccionada: {st.session_state.consulta_seleccionada}")
+    st.info(f"Consulta seleccionada: {st.session_state.consulta_seleccionada}")
 
 # ── Chat Input ──────────────────────────────────────────────────────────────
 entrada = st.chat_input(
@@ -604,15 +604,15 @@ entrada = st.chat_input(
 if not hay_historial:
     chip_cols = st.columns([1, 1, 1, 1, 1])
     sugerencias = [
-        ("📋", "Listar siniestros"),
-        ("💰", "Ver tarifario auto"),
-        ("🏠", "Ver tarifario hogar"),
-        ("📜", "Políticas de auditoría"),
-        ("🔍", "Analizar factura"),
+        ("", "Listar siniestros"),
+        ("", "Ver tarifario auto"),
+        ("", "Ver tarifario hogar"),
+        ("", "Políticas de auditoría"),
+        ("", "Analizar factura"),
     ]
     for col, (icono, texto) in zip(chip_cols, sugerencias):
         with col:
-            if st.button(f"{icono}  {texto}", key=f"chip_{texto}", use_container_width=True):
+            if st.button(texto, key=f"chip_{texto}", use_container_width=True):
                 st.session_state.consulta_seleccionada = texto
 
 # ── Model badge ─────────────────────────────────────────────────────────────
@@ -620,7 +620,7 @@ if not hay_historial:
     st.markdown(
         """
         <div style="text-align:center; padding: 10px 0 30px;">
-            <span class="model-badge">🤖 Llama 4 Scout · OpenRouter</span>
+            <span class="model-badge">Llama 4 Scout · OpenRouter</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -654,7 +654,7 @@ if entrada:
     with st.chat_message("user"):
         st.markdown(usuario_input)
         if st.session_state.adjuntos:
-            st.caption("📎 Adjuntos usados en esta consulta:")
+            st.caption("Adjuntos usados en esta consulta:")
             for adjunto in st.session_state.adjuntos:
                 st.write(f"- {adjunto['nombre']}")
 
