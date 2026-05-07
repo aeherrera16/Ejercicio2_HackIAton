@@ -202,22 +202,39 @@ div[data-testid="stChatInput"] > div {
 div[data-testid="stChatInput"] textarea {
     font-family: 'Source Sans 3', sans-serif !important;
     font-size: 1rem;
+    color: var(--text-primary) !important;
+}
+
+div[data-testid="stChatInput"] textarea::placeholder {
+    color: var(--text-muted) !important;
 }
 
 div[data-testid="stChatInput"] button {
-    background: var(--accent-ink) !important;
-    border: none !important;
-    color: #f8f5f0 !important;
+    background: var(--accent-sand) !important;
+    border: 1px solid var(--border-input) !important;
+    color: var(--accent-ink) !important;
     border-radius: 999px !important;
     box-shadow: var(--shadow-sm) !important;
+    height: 40px !important;
+    width: 40px !important;
 }
 
 div[data-testid="stChatInput"] button:hover {
+    background: #e6d8c7 !important;
+}
+
+div[data-testid="stChatInput"] button:last-of-type {
+    background: var(--accent-ink) !important;
+    border: none !important;
+    color: #f8f5f0 !important;
+}
+
+div[data-testid="stChatInput"] button:last-of-type:hover {
     background: var(--accent-coral) !important;
 }
 
 div[data-testid="stChatInput"] button svg {
-    fill: #f8f5f0 !important;
+    fill: currentColor !important;
 }
 
 div[data-testid="stFileUploader"] {

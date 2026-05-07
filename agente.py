@@ -398,6 +398,9 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
     def limpiar_historial(self):
         self.historial = []
 
+    def obtener_historial(self):
+        return self.historial
+
     def obtener_historial(self) -> list:
         return self.historial
 
