@@ -93,21 +93,33 @@ def _resumen_referencia_database() -> str:
     siniestros = listar_siniestros()
     politicas = obtener_politicas()
 
-    return f"""
-BASE DE REFERENCIA (Ecuador, datos de ejemplo de database.py)
+    def resumir_tarifario(nombre: str, tarifario: dict) -> str:
+        if not tarifario:
+            return f"- {nombre}: sin datos"
 
-Tarifario auto:
-{json.dumps(tarifario_auto, indent=2, ensure_ascii=False)}
+        secciones = []
+        for categoria in ("mano_obra", "insumos_y_consumibles", "repuestos_referenciales", "pintura"):
+            items = tarifario.get(categoria, {})
+            if items:
+                ejemplos = ", ".join(
+                    f"{k}({v.get('min')} - {v.get('max')} USD)" for k, v in list(items.items())[:4]
+                )
+                secciones.append(f"{categoria}: {ejemplos}")
 
-Tarifario hogar:
-{json.dumps(tarifario_hogar, indent=2, ensure_ascii=False)}
+        return (
+            f"- {nombre}: moneda={tarifario.get('moneda', 'USD')}, zona={tarifario.get('zona_referencia', 'Ecuador')}; "
+            + " | ".join(secciones)
+        )
 
-Siniestros de referencia:
-{json.dumps(siniestros, indent=2, ensure_ascii=False)}
-
-Politicas de auditoria:
-{json.dumps(politicas, indent=2, ensure_ascii=False)}
-""".strip()
+    return (
+        "BASE DE REFERENCIA (Ecuador, datos de ejemplo de database.py)\n"
+        + resumir_tarifario("auto", tarifario_auto)
+        + "\n"
+        + resumir_tarifario("hogar", tarifario_hogar)
+        + f"\n- Siniestros de referencia: {len(siniestros)} casos con tipo, cobertura, taller y partes afectadas."
+        + f"\n- Politicas: documentacion requerida={len(politicas.get('documentacion_requerida', []))}, "
+        + f"criterios_rechazo={len(politicas.get('criterios_rechazo', []))}, criterios_sobreprecio={len(politicas.get('criterios_sobreprecio', []))}."
+    )
 
 
 class AgenteAuditoria:
@@ -145,6 +157,14 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             "Detecta discrepancias, cobros duplicados, valores fuera de rango y conceptos no respaldados "
             "antes de que un humano revise la cuenta. "
             "Cuando recibas adjuntos, usalos como evidencia principal. "
+            "NO muestres la base de datos en bruto, NO pegues JSON, y NO expliques la referencia a menos que sea necesario. "
+            "Responde siempre en este formato:\n"
+            "1. Veredicto: Aprobado, Requiere revision o Rechazado\n"
+            "2. Sobreprecio detectado: si/no + detalle\n"
+            "3. Cobros duplicados: si/no + detalle\n"
+            "4. Diferencias contra tarifario: lista breve\n"
+            "5. Coherencia con siniestralidad reportada: si/no + detalle\n"
+            "6. Recomendacion final: una accion concreta\n"
             "Puedes analizar hasta 3 archivos por consulta (PDF/JPG/PNG).\n\n"
             + contexto_herramientas
             + "\n\n"
@@ -281,7 +301,8 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
         partes.append(
             "\n\nObjetivo del analisis: determinar si el archivo adjunto corresponde a un "
             "siniestro o documentacion relacionada (factura, poliza, cotizacion, peritaje, evidencia). "
-            "No pidas ID. Si hay facturas, revisa coherencia y posibles cobros fuera de tarifario."
+            "No pidas ID. Si hay facturas, revisa coherencia y posibles cobros fuera de tarifario. "
+            "Prioriza detectar sobreprecio, cobros duplicados y conceptos no respaldados."
         )
 
         for adjunto in adjuntos[:MAX_ADJUNTOS]:
