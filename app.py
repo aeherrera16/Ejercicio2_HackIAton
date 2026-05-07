@@ -24,7 +24,7 @@ st.markdown(
 
 :root {
     --bg-main: #f6f0e8;
-    --bg-sidebar: #fdfbf8;
+    --bg-sidebar: #f6f0e8;
     --bg-card: #ffffff;
     --bg-input: #ffffff;
     --border-light: rgba(36, 38, 40, 0.12);
@@ -58,9 +58,16 @@ html, body, [class*="css"], .stApp {
 }
 
 section[data-testid="stSidebar"] {
-    background: var(--bg-sidebar);
-    border-right: 1px solid var(--border-light);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(244, 236, 225, 0.65)),
+        var(--bg-sidebar);
+    border-right: none;
     padding-top: 18px;
+    box-shadow: 18px 0 40px rgba(24, 32, 41, 0.08);
+}
+
+section[data-testid="stSidebar"] > div {
+    background: transparent !important;
 }
 
 section[data-testid="stSidebar"] .stMarkdown h3 {
@@ -195,6 +202,22 @@ div[data-testid="stChatInput"] > div {
 div[data-testid="stChatInput"] textarea {
     font-family: 'Source Sans 3', sans-serif !important;
     font-size: 1rem;
+}
+
+div[data-testid="stChatInput"] button {
+    background: var(--accent-ink) !important;
+    border: none !important;
+    color: #f8f5f0 !important;
+    border-radius: 999px !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+
+div[data-testid="stChatInput"] button:hover {
+    background: var(--accent-coral) !important;
+}
+
+div[data-testid="stChatInput"] button svg {
+    fill: #f8f5f0 !important;
 }
 
 div[data-testid="stFileUploader"] {
