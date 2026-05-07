@@ -57,8 +57,20 @@ def _obtener_openrouter_api_key() -> str | None:
     return None
 
 
+def _detectar_proveedor(api_key: str | None) -> str:
+    """Detecta proveedor por prefijo de clave."""
+    if not api_key:
+        return "none"
+    if str(api_key).startswith("sk-or-"):
+        return "openrouter"
+    if str(api_key).startswith("gsk_"):
+        return "groq"
+    return "unknown"
+
+
 # Configurar API de OpenRouter
 OPENROUTER_API_KEY = _obtener_openrouter_api_key()
+API_PROVIDER = _detectar_proveedor(OPENROUTER_API_KEY)
 
 HERRAMIENTAS_DISPONIBLES = """
 Herramientas disponibles:
@@ -101,13 +113,20 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
             + contexto_herramientas
         )
 
-        self.api_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.headers = {
-            "Authorization": f"Bearer {OPENROUTER_API_KEY or ''}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://streamlit.app",
-            "X-Title": "Auditor IA - Seguros",
-        }
+        if API_PROVIDER == "groq":
+            self.api_url = "https://api.groq.com/openai/v1/chat/completions"
+            self.headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY or ''}",
+                "Content-Type": "application/json",
+            }
+        else:
+            self.api_url = "https://openrouter.ai/api/v1/chat/completions"
+            self.headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY or ''}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://streamlit.app",
+                "X-Title": "Auditor IA - Seguros",
+            }
         self.historial = []
 
     def analizar_reclamo(self, pregunta_usuario: str, adjuntos: list | None = None) -> str:
@@ -121,38 +140,49 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
         return respuesta_texto
 
     def _consultar_modelo(self, partes_generacion: list) -> str:
-        """Llama al modelo de OpenRouter con contenido multimodal."""
+        """Llama al modelo del proveedor detectado."""
         if not OPENROUTER_API_KEY:
             return (
-                "Falta configurar la API key de OpenRouter en Streamlit Cloud. "
+                "Falta configurar API key en Streamlit Cloud. "
                 "En Settings -> Secrets agrega: OPENROUTER_API_KEY = \"tu_api_key\" "
                 "y luego haz Reboot."
             )
 
-        # OpenRouter usa claves tipo sk-or-... ; evita llamadas fallidas con claves de otro proveedor.
-        if not str(OPENROUTER_API_KEY).startswith("sk-or-"):
+        if API_PROVIDER == "unknown":
             return (
-                "La API key configurada no parece ser de OpenRouter. "
-                "Para este endpoint necesitas una clave que empiece con 'sk-or-'. "
-                "Si pegaste una key de Groq u otro proveedor, cámbiala en Streamlit Secrets."
+                "No pude identificar el proveedor de la API key. "
+                "Usa una key de OpenRouter (sk-or-...) o de Groq (gsk_...)."
             )
 
-        contenido_usuario = []
-        for parte in partes_generacion:
-            if isinstance(parte, str):
-                contenido_usuario.append({"type": "text", "text": parte})
-            elif isinstance(parte, dict) and parte.get("type") == "image_url":
-                contenido_usuario.append(parte)
+        if API_PROVIDER == "groq":
+            # Groq se usa en modo texto para evitar errores con contenido image_url.
+            texto_usuario = "\n\n".join([p for p in partes_generacion if isinstance(p, str)])
+            payload = {
+                "model": MODEL_NAME,
+                "messages": [
+                    {"role": "system", "content": self.system_instruction},
+                    {"role": "user", "content": texto_usuario},
+                ],
+                "temperature": 0.4,
+                "max_tokens": 1200,
+            }
+        else:
+            contenido_usuario = []
+            for parte in partes_generacion:
+                if isinstance(parte, str):
+                    contenido_usuario.append({"type": "text", "text": parte})
+                elif isinstance(parte, dict) and parte.get("type") == "image_url":
+                    contenido_usuario.append(parte)
 
-        payload = {
-            "model": MODEL_NAME,
-            "messages": [
-                {"role": "system", "content": self.system_instruction},
-                {"role": "user", "content": contenido_usuario},
-            ],
-            "temperature": 0.4,
-            "max_tokens": 1200,
-        }
+            payload = {
+                "model": MODEL_NAME,
+                "messages": [
+                    {"role": "system", "content": self.system_instruction},
+                    {"role": "user", "content": contenido_usuario},
+                ],
+                "temperature": 0.4,
+                "max_tokens": 1200,
+            }
 
         try:
             resp = requests.post(self.api_url, headers=self.headers, json=payload, timeout=120)
@@ -169,9 +199,9 @@ Nunca escribas llamadas de funciones literalmente en la respuesta final.
                 pass
             if status == 401 and "Missing Authentication header" in detalle:
                 return (
-                    "OpenRouter respondió 401 por autenticación faltante. "
+                    "El proveedor respondió 401 por autenticación faltante. "
                     "Revisa en Streamlit Secrets que exista exactamente OPENROUTER_API_KEY "
-                    "(sin secciones, sin espacios extra) y que la clave sea de OpenRouter (sk-or-...)."
+                    "(sin secciones, sin espacios extra)."
                 )
             return f"No pude completar el analisis con Llama. Error HTTP: {detalle[:400]}"
         except requests.RequestException as exc:
